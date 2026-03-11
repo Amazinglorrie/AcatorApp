@@ -81,16 +81,16 @@ Root
 
 ### Navigation Levels
 
-**1. Root Level — Auth Stack**
+**1. Root Level —> Auth Stack**
 Handles authentication screens: Login and Register.
 
-**2. Level 1 — Bottom Tab Navigator**
+**2. Level 1 —> Bottom Tab Navigator**
 Top-level sections users switch between frequently: Dashboard, Notifications, Profile.
 
-**3. Level 2 — Stack Navigator (per tab)**
+**3. Level 2 —> Stack Navigator (per tab)**
 Nested screens following a drill-down pattern: Project Detail, Task Detail, Members, Chat.
 
-**4. Overlay — Modal Navigator**
+**4. Overlay —> Modal Navigator**
 Short-lived actions that shouldn't disrupt the user's current context: Create Task, Invite Member, Add File Link.
 
 ### Why This Strategy
@@ -137,7 +137,7 @@ The project uses a **remote, real-time PostgreSQL database via Supabase**, with 
 
 ### Why Remote Storage is Required
 
-The app is **collaborative** — multiple students work on shared projects, so data must be centralized. Local-only storage (AsyncStorage, SQLite) cannot support:
+The app is **collaborative**: multiple students work on shared projects, so data must be centralized. Local-only storage (AsyncStorage, SQLite) cannot support:
 
 - Shared project/task data
 - Real-time chat
