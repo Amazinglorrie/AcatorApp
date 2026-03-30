@@ -42,6 +42,11 @@ const projects = [
   },
 ];
 
+const getStatusStyle = (status: string) => ({
+  backgroundColor: status === 'In Progress' ? Colors.statusInProgress : Colors.statusTodo,
+  textColor: status === 'In Progress' ? Colors.white : Colors.primary,
+});
+
 export default function HomeTab() {
   return (
     <View style={styles.container}>
@@ -79,7 +84,7 @@ export default function HomeTab() {
             style={styles.actionButton}
             onPress={() => router.push('/project/create')}
           >
-            <Ionicons name="folder-open-outline" size={28} color={Colors.header} />
+            <Ionicons name="folder-open-outline" size={28} color={Colors.sidebar} />
             <Text style={styles.actionText}>Projects</Text>
           </TouchableOpacity>
         </View>
@@ -97,51 +102,52 @@ export default function HomeTab() {
           data={projects}
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.projectCard}
-              onPress={() => router.push(`/kanban/${item.id}`)}
-            >
-              {/* Card Header */}
-              <View style={styles.cardHeader}>
-                <Text style={styles.projectTitle}>{item.title}</Text>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: item.status === 'In Progress' ? '#EF9F27' : '#E0F2FE' }
-                ]}>
-                  <Text style={[
-                    styles.statusText,
-                    { color: item.status === 'In Progress' ? '#fff' : Colors.primary }
-                  ]}>
-                    {item.status}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Priority & Due Date */}
-              <View style={styles.cardMeta}>
-                <Text style={styles.metaText}>Priority: <Text style={styles.priorityText}>{item.priority}</Text></Text>
-                <Text style={styles.metaText}>Due: {item.dueDate}</Text>
-              </View>
-
-              {/* Progress Bar */}
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${item.progress}%` }]} />
-              </View>
-              <Text style={styles.progressLabel}>{item.progress}% complete</Text>
-
-              {/* Members */}
-              <View style={styles.membersRow}>
-                {item.members.map((member, index) => (
-                  <View key={index} style={[styles.memberAvatar, { marginLeft: index > 0 ? -8 : 0 }]}>
-                    <Text style={styles.memberText}>{member}</Text>
+          renderItem={({ item }) => {
+            const statusStyle = getStatusStyle(item.status);
+            return (
+              <TouchableOpacity
+                style={styles.projectCard}
+                onPress={() => router.push(`/kanban/${item.id}`)}
+              >
+                {/* Card Header */}
+                <View style={styles.cardHeader}>
+                  <Text style={styles.projectTitle}>{item.title}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor }]}>
+                    <Text style={[styles.statusText, { color: statusStyle.textColor }]}>
+                      {item.status}
+                    </Text>
                   </View>
-                ))}
-              </View>
-            </TouchableOpacity>
-          )}
-        />
+                </View>
 
+                {/* Priority & Due Date */}
+                <View style={styles.cardMeta}>
+                  <Text style={styles.metaText}>
+                    Priority: <Text style={styles.priorityText}>{item.priority}</Text>
+                  </Text>
+                  <Text style={styles.metaText}>Due: {item.dueDate}</Text>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${item.progress}%` }]} />
+                </View>
+                <Text style={styles.progressLabel}>{item.progress}% complete</Text>
+
+                {/* Members */}
+                <View style={styles.membersRow}>
+                  {item.members.map((member, index) => (
+                    <View
+                      key={index}
+                      style={[styles.memberAvatar, { marginLeft: index > 0 ? -8 : 0 }]}
+                    >
+                      <Text style={styles.memberText}>{member}</Text>
+                    </View>
+                  ))}
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+        />
       </ScrollView>
     </View>
   );
@@ -177,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: Colors.radius.card,
     width: '30%',
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -208,7 +214,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -229,7 +235,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: Colors.radius.button,
   },
   statusText: {
     fontSize: 11,
@@ -250,7 +256,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 4,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: Colors.border,
     borderRadius: 2,
     overflow: 'hidden',
     marginBottom: 4,
@@ -282,6 +288,6 @@ const styles = StyleSheet.create({
   memberText: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors.white,
   },
 });

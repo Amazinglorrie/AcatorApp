@@ -7,6 +7,9 @@ export const Colors = {
   alert: '#EF4444',
   white: '#FFFFFF',
   black: '#000000',
+  border: '#E0E0E0',
+  statusInProgress: '#EF9F27',   // ← add this
+  statusTodo: '#E0F2FE',         // ← add this
   text: {
     primary: '#134E4A',
     secondary: '#6B7280',
