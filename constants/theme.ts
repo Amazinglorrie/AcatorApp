@@ -5,21 +5,19 @@ export const Colors = {
   sidebar: '#134E4A',
   header: '#134E4A',
   alert: '#EF4444',
-
+  white: '#FFFFFF',
+  black: '#000000',
   text: {
     primary: '#134E4A',
     secondary: '#6B7280',
     light: '#FFFFFF',
   },
-
   spacing: {
-    screen: 20,
-    card: 16,
-    gap: 12,
+    screen: 16,
   },
-
   radius: {
-    card: 14,
-    input: 10,
+    card: 12,
+    button: 8,
+    input: 8,
   },
-};  
+};
