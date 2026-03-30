@@ -1,5 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useEffect } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
 
 export default function TabLayout() {
   return (
