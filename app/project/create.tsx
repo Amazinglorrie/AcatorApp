@@ -18,10 +18,10 @@ export default function CreateProject() {
 
   return (
     <View style={styles.container}>
-      {/* Teal Header */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Ionicons name="chevron-back" size={24} color={Colors.text.light} />
         </TouchableOpacity>
       </View>
 
@@ -114,7 +114,7 @@ export default function CreateProject() {
           onPress={() => router.push('/project/tasks')}
         >
           <Text style={styles.nextText}>Next</Text>
-          <Ionicons name="chevron-forward" size={18} color="#fff" />
+          <Ionicons name="chevron-forward" size={18} color={Colors.text.light} />
         </TouchableOpacity>
 
       </ScrollView>
@@ -154,13 +154,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: Colors.radius.input,
     padding: 12,
     fontSize: 14,
     color: Colors.text.primary,
     borderWidth: 0.5,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
   },
   textarea: {
     height: 80,
@@ -171,14 +171,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   dateInput: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: Colors.radius.input,
     padding: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 0.5,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
   },
   datePlaceholder: {
     fontSize: 13,
@@ -192,13 +192,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderWidth: 0.5,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
   },
   priorityPillActive: {
-    backgroundColor: '#EF9F27',
-    borderColor: '#EF9F27',
+    backgroundColor: Colors.statusInProgress,
+    borderColor: Colors.statusInProgress,
   },
   priorityText: {
     fontSize: 13,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   priorityTextActive: {
-    color: '#fff',
+    color: Colors.text.light,
     fontWeight: '600',
   },
   sectionLabel: {
@@ -216,10 +216,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   uploadBox: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: Colors.radius.card,
     borderWidth: 0.5,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
     borderStyle: 'dashed',
     padding: 20,
     alignItems: 'center',
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   nextText: {
-    color: '#fff',
+    color: Colors.text.light,
     fontWeight: '700',
     fontSize: 16,
   },

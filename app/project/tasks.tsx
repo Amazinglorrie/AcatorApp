@@ -20,8 +20,8 @@ const subtasks = [
 ];
 
 const comments = [
-  { initials: 'AL', name: 'Andres Lagos', text: 'Looks great! Can we adjust the settings flow a bit?' },
-  { initials: 'CH', name: 'Cecilia H', text: "No problem, I'll get right on it." },
+  { initials: 'AN', name: 'Alan N', text: 'Looks great! Can we adjust the settings flow a bit?' },
+  { initials: 'CT', name: 'Celina T', text: "No problem, I'll get right on it." },
 ];
 
 export default function TaskPage() {

@@ -59,12 +59,12 @@ export default function KanbanBoard() {
   return (
     <View style={styles.container}>
 
-      {/* Teal Header */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Ionicons name="chevron-back" size={24} color="#ffffff" />
         </TouchableOpacity>
-        <Ionicons name="ellipsis-horizontal" size={24} color="#fff" />
+        <Ionicons name="ellipsis-horizontal" size={24} color="#ffffff" />
       </View>
 
       {/* Title & Status */}
@@ -108,7 +108,7 @@ export default function KanbanBoard() {
               {/* Column Header */}
               <View style={[styles.columnHeader, { backgroundColor: item.color }]}>
                 <Text style={styles.columnTitle}>{item.title}</Text>
-                <MaterialCommunityIcons name="pencil-outline" size={18} color="#fff" />
+                <MaterialCommunityIcons name="pencil-outline" size={18} color="#ffffff" />
               </View>
 
               {/* Vertical FlatList for Tasks */}
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#fff',
+    color: '#ffffff',
     flex: 1,
     marginRight: 10,
   },
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   statusText: {
-    color: '#fff',
+    color: '#fffff',
     fontWeight: '600',
     fontSize: 12,
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '600',
   },
   columnsContainer: {
@@ -271,17 +271,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   columnTitle: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
     fontSize: 15,
   },
   taskCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     padding: 12,
     borderRadius: Colors.radius.card,
     marginTop: 10,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: '#090000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -317,9 +317,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   memberInitial: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
-    fontSize: 11,
+    fontSize: 12,
   },
   addTaskBtn: {
     flexDirection: 'row',

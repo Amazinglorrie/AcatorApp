@@ -12,7 +12,7 @@ import { useLocalSearchParams, router } from "expo-router";
 export default function ProjectOverview() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // Mock project data (replace with real data later)
+  // Mock project data (will be replaced with real data later)
   const project = {
     title: "Phase 2 Presentation",
     description:
@@ -20,7 +20,7 @@ export default function ProjectOverview() {
     start: "01/03/2024",
     due: "20/03/2024",
     priority: "Medium",
-    members: ["Cecilia H", "Andres L", "Loretta O"],
+    members: ["Celina T", "Alan N", "Loretta O"],
     documents: 3,
     progress: 45,
   };

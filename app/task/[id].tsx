@@ -42,9 +42,9 @@ const TaskDetails = () => {
             <Text style={styles.metaLabel}>ASSIGNEE</Text>
             <View style={styles.avatarRow}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>CH</Text>
+                <Text style={styles.avatarText}>CT</Text>
               </View>
-              <Text style={styles.metaValue}>Cecilia H</Text>
+              <Text style={styles.metaValue}>Celina </Text>
             </View>
           </View>
           <View style={styles.metaItem}>
@@ -97,8 +97,8 @@ const TaskDetails = () => {
         <Text style={styles.sectionTitle}>Comments</Text>
 
         {[
-          { initials: 'AL', name: 'Andree Lagos', text: 'Looks great! Can we adjust the settings flow a bit?' },
-          { initials: 'CH', name: 'Cecilia H', text: "No problem, I'll get right on it." },
+          { initials: 'AN', name: 'Alan N', text: 'Looks great! Can we adjust the settings flow a bit?' },
+          { initials: 'CT', name: 'Celina T', text: "No problem, I'll get right on it." },
         ].map((comment, index) => (
           <View key={index} style={styles.commentRow}>
             <View style={styles.avatar}>
