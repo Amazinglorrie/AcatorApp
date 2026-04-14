@@ -1,111 +1,258 @@
-import React, { useCallback, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-  View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, Alert,
-} from 'react-native';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { v4 as uuidv4 } from 'uuid';
-import { Colors } from '../../constants/theme';
-import { Project } from '../../constants/types';
-import { getProjects, saveTask } from '../../store/storage';
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import DatePickerModal from "../../components/DatePickerModal";
+import { Colors } from "../../constants/theme";
+import { Project, Task } from "../../constants/types";
+import { formatDueDate } from "../../constants/utils";
+import { getProjects, saveTask } from "../../store/storage";
 
 export default function NewTaskScreen() {
-  const { projectId } = useLocalSearchParams<{ projectId?: string }>();
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>(projectId ?? '');
-  const [name, setName] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [name, setName] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    null,
+  );
+  const [dueDate, setDueDate] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
 
-  useFocusEffect(useCallback(() => {
-    getProjects().then((p) => {
-      setProjects(p);
-      if (!selectedProject && p.length > 0) setSelectedProject(p[0].id);
-    });
-  }, []));
+  const load = useCallback(async () => {
+    const p = await getProjects();
+    setProjects(p);
+    if (p.length > 0 && !selectedProjectId) setSelectedProjectId(p[0].id);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert('Name required', 'Please enter a task name.'); return; }
-    if (!selectedProject) { Alert.alert('Project required', 'Please select a project.'); return; }
-    if (!dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      Alert.alert('Invalid date', 'Please enter a date in YYYY-MM-DD format.');
+    if (!name.trim()) {
+      Alert.alert("Name required", "Please enter a task name.");
       return;
     }
-    await saveTask({
-      id: uuidv4(),
-      projectId: selectedProject,
+    if (!selectedProjectId) {
+      Alert.alert("Project required", "Please select a project.");
+      return;
+    }
+    const project = projects.find((p) => p.id === selectedProjectId);
+    const task: Task = {
+      id: Date.now().toString(),
+      projectId: selectedProjectId,
       name: name.trim(),
-      dueDate,
-      status: 'pending',
+      dueDate:
+        dueDate || project?.dueDate || new Date().toISOString().split("T")[0],
+      status: "pending",
       createdAt: new Date().toISOString(),
-    });
+    };
+    await saveTask(task);
     router.back();
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.topBar}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="close" size={24} color={Colors.textSecondary} />
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>New task</Text>
-        <TouchableOpacity onPress={handleSave}>
+        <Text style={styles.headerTitle}>New Task</Text>
+        <TouchableOpacity onPress={handleSave} hitSlop={10}>
           <Text style={styles.saveBtn}>Save</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.fieldLabel}>Task name</Text>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.label}>Task name</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g. Write introduction"
+          placeholder="What needs to be done?"
           placeholderTextColor={Colors.textTertiary}
           value={name}
           onChangeText={setName}
+          autoFocus
+          returnKeyType="done"
         />
 
-        <Text style={styles.fieldLabel}>Project</Text>
-        {projects.map((p) => (
-          <TouchableOpacity
-            key={p.id}
-            style={[styles.projectRow, selectedProject === p.id && styles.projectRowActive]}
-            onPress={() => setSelectedProject(p.id)}
+        <Text style={styles.label}>Project</Text>
+        <TouchableOpacity
+          style={styles.pickerBtn}
+          onPress={() => setShowProjectPicker(!showProjectPicker)}
+        >
+          <View style={styles.projectDot} />
+          <Text style={styles.pickerBtnText}>
+            {selectedProject?.name ?? "Select a project"}
+          </Text>
+          <Ionicons
+            name={showProjectPicker ? "chevron-up" : "chevron-down"}
+            size={16}
+            color={Colors.textSecondary}
+          />
+        </TouchableOpacity>
+        {showProjectPicker && (
+          <View style={styles.pickerList}>
+            {projects.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={styles.pickerItem}
+                onPress={() => {
+                  setSelectedProjectId(p.id);
+                  setShowProjectPicker(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.pickerItemText,
+                    p.id === selectedProjectId && styles.pickerItemTextActive,
+                  ]}
+                >
+                  {p.name}
+                </Text>
+                <Text style={styles.pickerItemSub}>{p.subject}</Text>
+                {p.id === selectedProjectId && (
+                  <Ionicons name="checkmark" size={16} color={Colors.teal} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.label}>Due date</Text>
+        <TouchableOpacity
+          style={styles.pickerBtn}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={Colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.pickerBtnText,
+              !dueDate && { color: Colors.textTertiary },
+            ]}
           >
-            <View style={[styles.colorDot, { backgroundColor: Colors[p.color] }]} />
-            <Text style={styles.projectName}>{p.name}</Text>
-            {selectedProject === p.id && (
-              <Ionicons name="checkmark" size={16} color={Colors.accent} />
-            )}
-          </TouchableOpacity>
-        ))}
+            {dueDate ? formatDueDate(dueDate) : "Pick a date"}
+          </Text>
+        </TouchableOpacity>
 
-        <Text style={styles.fieldLabel}>Due date (YYYY-MM-DD)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="2026-05-01"
-          placeholderTextColor={Colors.textTertiary}
-          value={dueDate}
-          onChangeText={setDueDate}
-          keyboardType="numeric"
-          maxLength={10}
-        />
+        <TouchableOpacity style={styles.saveFullBtn} onPress={handleSave}>
+          <Text style={styles.saveFullBtnText}>Save task</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      <DatePickerModal
+        visible={showDatePicker}
+        value={dueDate || new Date().toISOString().split("T")[0]}
+        onConfirm={(date) => {
+          setDueDate(date);
+          setShowDatePicker(false);
+        }}
+        onCancel={() => setShowDatePicker(false)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  topTitle: { fontSize: 15, fontWeight: '500', color: Colors.textPrimary },
-  saveBtn: { fontSize: 15, fontWeight: '500', color: Colors.accent },
-  content: { padding: 16, paddingBottom: 48 },
-  fieldLabel: { fontSize: 12, fontWeight: '500', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8, marginTop: 16 },
-  input: { backgroundColor: Colors.card, borderRadius: 12, padding: 12, fontSize: 15, color: Colors.textPrimary },
-  projectRow: { backgroundColor: Colors.card, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  projectRowActive: { borderWidth: 1.5, borderColor: Colors.accent },
-  colorDot: { width: 10, height: 10, borderRadius: 5 },
-  projectName: { flex: 1, fontSize: 14, color: Colors.textPrimary },
+  safe: { flex: 1, backgroundColor: Colors.teal },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.teal,
+  },
+  headerTitle: { flex: 1, fontSize: 16, fontWeight: "500", color: "#fff" },
+  saveBtn: { fontSize: 15, fontWeight: "500", color: "#fff" },
+  scroll: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: 16, paddingBottom: 40 },
+
+  label: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: Colors.textSecondary,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    borderWidth: 0.5,
+    borderColor: Colors.separator,
+    marginBottom: 14,
+  },
+  pickerBtn: {
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 0.5,
+    borderColor: Colors.separator,
+    marginBottom: 6,
+    gap: 8,
+  },
+  pickerBtnText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
+  projectDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.teal,
+  },
+  pickerList: {
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.separator,
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  pickerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.separator,
+  },
+  pickerItemText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
+  pickerItemTextActive: { color: Colors.teal, fontWeight: "500" },
+  pickerItemSub: { fontSize: 11, color: Colors.textTertiary },
+
+  saveFullBtn: {
+    backgroundColor: Colors.teal,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  saveFullBtnText: { fontSize: 15, fontWeight: "500", color: "#fff" },
 });
