@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../constants/theme";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
@@ -22,14 +22,15 @@ function TabIcon({
         <View style={styles.activeBubble}>
           <Ionicons name={activeName} size={22} color="#fff" />
         </View>
-        <Text style={styles.activeLabel}>{label}</Text>
+        <Text style={styles.activeLabel} numberOfLines={1}>
+          {label}
+        </Text>
       </View>
     );
   }
   return (
     <View style={styles.inactiveWrap}>
-      <Ionicons name={name} size={21} color="rgba(255,255,255,0.65)" />
-      <Text style={styles.inactiveLabel}>{label}</Text>
+      <Ionicons name={name} size={22} color="rgba(255,255,255,0.7)" />
     </View>
   );
 }
@@ -41,6 +42,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
+        tabBarItemStyle: styles.tabItem,
       }}
     >
       <Tabs.Screen
@@ -76,7 +78,7 @@ export default function TabsLayout() {
             <TabIcon
               name="notifications-outline"
               activeName="notifications"
-              label="Notifications"
+              label="Alerts"
               focused={focused}
             />
           ),
@@ -99,27 +101,39 @@ export default function TabsLayout() {
   );
 }
 
+const BAR_HEIGHT = 64;
+
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.teal,
     borderTopWidth: 0,
     borderRadius: 36,
     marginHorizontal: 16,
-    marginBottom: Platform.OS === "ios" ? 24 : 12,
-    height: 64,
+    marginBottom: 16,
+    height: BAR_HEIGHT,
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    elevation: 12,
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
     paddingBottom: 0,
     paddingTop: 0,
   },
-  activeWrap: { alignItems: "center", marginTop: -22 },
+  tabItem: {
+    height: BAR_HEIGHT,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  activeWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -22,
+    gap: 3,
+  },
   activeBubble: {
     width: 50,
     height: 50,
@@ -129,14 +143,15 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 3,
   },
-  activeLabel: { fontSize: 10, fontWeight: "500", color: "#fff" },
+  activeLabel: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: "#fff",
+  },
   inactiveWrap: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
-    paddingTop: 6,
   },
-  inactiveLabel: { fontSize: 10, color: "rgba(255,255,255,0.65)" },
 });
