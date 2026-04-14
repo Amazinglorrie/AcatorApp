@@ -2,36 +2,77 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/theme";
 import { Project, Task } from "../../constants/types";
 import { saveProject, saveTask } from "../../store/storage";
 
+interface TaskDraft {
+  id: string;
+  name: string;
+  member: string | null;
+}
+
 export default function NewProjectTasksScreen() {
   const router = useRouter();
   const { projectJson } = useLocalSearchParams<{ projectJson: string }>();
   const project: Project = JSON.parse(projectJson ?? "{}");
 
-  const [tasks, setTasks] = useState<{ id: string; name: string }[]>([]);
+  const [tasks, setTasks] = useState<TaskDraft[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const [newTaskName, setNewTaskName] = useState("");
+  const [addingNew, setAddingNew] = useState(false);
 
   const addTask = () => {
     const name = newTaskName.trim();
-    if (!name) return;
-    setTasks((prev) => [...prev, { id: Date.now().toString(), name }]);
+    if (!name) {
+      setAddingNew(false);
+      return;
+    }
+    setTasks((prev) => [
+      ...prev,
+      { id: Date.now().toString(), name, member: null },
+    ]);
     setNewTaskName("");
+    setAddingNew(false);
   };
 
-  const removeTask = (id: string) => {
+  const removeTask = (id: string) =>
     setTasks((prev) => prev.filter((t) => t.id !== id));
+
+  const removeMember = (id: string) =>
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, member: null } : t)),
+    );
+
+  const addMember = (id: string) =>
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, member: "Terry Gerson" } : t)),
+    );
+
+  const startEdit = (t: TaskDraft) => {
+    setEditingId(t.id);
+    setEditingName(t.name);
+  };
+
+  const commitEdit = () => {
+    if (!editingId) return;
+    const name = editingName.trim();
+    if (name)
+      setTasks((prev) =>
+        prev.map((t) => (t.id === editingId ? { ...t, name } : t)),
+      );
+    setEditingId(null);
+    setEditingName("");
   };
 
   const handleFinish = async () => {
@@ -39,9 +80,7 @@ export default function NewProjectTasksScreen() {
       Alert.alert("Error", "Project data is missing.");
       return;
     }
-
     await saveProject(project);
-
     for (const t of tasks) {
       const task: Task = {
         id: t.id,
@@ -53,20 +92,19 @@ export default function NewProjectTasksScreen() {
       };
       await saveTask(task);
     }
-
-    // Navigate to the new project detail page
     router.replace(`/project/${project.id}`);
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} />
+        <View style={{ flex: 1 }} />
         <View style={styles.headerIcon}>
-          <Ionicons name="settings-outline" size={16} color="#fff" />
+          <Ionicons name="bookmark-outline" size={16} color="#fff" />
         </View>
       </View>
 
@@ -79,81 +117,128 @@ export default function NewProjectTasksScreen() {
         <Text style={styles.pageTitle}>New Project</Text>
         <Text style={styles.sectionLabel}>Tasks</Text>
 
+        {/* Tasks card */}
         <View style={styles.card}>
-          {tasks.length === 0 && (
-            <Text style={styles.emptyText}>No tasks yet. Add one below.</Text>
-          )}
-
           {tasks.map((t, index) => (
-            <View
-              key={t.id}
-              style={[
-                styles.taskRow,
-                index === tasks.length - 1 && { borderBottomWidth: 0 },
-              ]}
-            >
-              <View style={styles.taskCircle} />
-              <Text style={styles.taskName} numberOfLines={1}>
-                {t.name}
-              </Text>
+            <View key={t.id}>
+              {/* Task row */}
+              <View style={styles.taskRow}>
+                {/* Circle checkbox */}
+                <View style={styles.taskCircle} />
+
+                {/* Name or edit input */}
+                {editingId === t.id ? (
+                  <TextInput
+                    style={styles.taskNameInput}
+                    value={editingName}
+                    onChangeText={setEditingName}
+                    onSubmitEditing={commitEdit}
+                    onBlur={commitEdit}
+                    autoFocus
+                    returnKeyType="done"
+                  />
+                ) : (
+                  <Text style={styles.taskName} numberOfLines={1}>
+                    {t.name}
+                  </Text>
+                )}
+
+                <TouchableOpacity
+                  onPress={() => startEdit(t)}
+                  hitSlop={8}
+                  style={styles.taskAction}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={16}
+                    color={Colors.textTertiary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => removeTask(t.id)}
+                  hitSlop={8}
+                  style={styles.taskAction}
+                >
+                  <Ionicons
+                    name="reorder-three-outline"
+                    size={18}
+                    color={Colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Member row */}
+              {t.member ? (
+                <View style={styles.memberRow}>
+                  <View style={styles.memberAvatar}>
+                    <Text style={styles.memberAvatarText}>TG</Text>
+                  </View>
+                  <Text style={styles.memberName}>{t.member}</Text>
+                  <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={() => removeMember(t.id)}
+                  >
+                    <Text style={styles.removeBtnText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {/* Add member to task */}
               <TouchableOpacity
-                style={styles.editIcon}
-                hitSlop={8}
-                onPress={() => {
-                  setNewTaskName(t.name);
-                  removeTask(t.id);
-                }}
+                style={styles.addMemberRow}
+                onPress={() => addMember(t.id)}
               >
-                <Ionicons
-                  name="create-outline"
-                  size={16}
-                  color={Colors.textTertiary}
-                />
+                <View style={styles.addMemberCircle}>
+                  <Ionicons name="add" size={14} color={Colors.teal} />
+                </View>
+                <Text style={styles.addMemberText}>Add member to task</Text>
               </TouchableOpacity>
-              <TouchableOpacity hitSlop={8} onPress={() => removeTask(t.id)}>
-                <Ionicons name="close" size={16} color={Colors.destructive} />
-              </TouchableOpacity>
+
+              {/* Divider between tasks */}
+              {index < tasks.length - 1 && <View style={styles.taskDivider} />}
             </View>
           ))}
 
-          {/* Add task row */}
-          <View style={styles.addRow}>
-            <View style={[styles.taskCircle, { borderColor: Colors.teal }]} />
-            <TextInput
-              style={styles.addInput}
-              placeholder="Add a task…"
-              placeholderTextColor={Colors.textTertiary}
-              value={newTaskName}
-              onChangeText={setNewTaskName}
-              onSubmitEditing={addTask}
-              returnKeyType="done"
-            />
-            <TouchableOpacity onPress={addTask} hitSlop={8}>
-              <Ionicons name="add-circle" size={22} color={Colors.teal} />
-            </TouchableOpacity>
-          </View>
+          {/* New task input */}
+          {addingNew && (
+            <View style={styles.taskRow}>
+              <View style={styles.taskCircle} />
+              <TextInput
+                style={[styles.taskNameInput, { flex: 1 }]}
+                placeholder="Task name…"
+                placeholderTextColor={Colors.textTertiary}
+                value={newTaskName}
+                onChangeText={setNewTaskName}
+                onSubmitEditing={addTask}
+                onBlur={addTask}
+                autoFocus
+                returnKeyType="done"
+              />
+            </View>
+          )}
+
+          {/* Add New Task button */}
+          <TouchableOpacity
+            style={[
+              styles.addNewTaskRow,
+              tasks.length > 0 && styles.addNewTaskRowBorder,
+            ]}
+            onPress={() => setAddingNew(true)}
+          >
+            <View style={styles.addNewCircle}>
+              <Ionicons name="add" size={16} color={Colors.teal} />
+            </View>
+            <Text style={styles.addNewTaskText}>Add New Task</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Project summary */}
-        {project.name ? (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Project</Text>
-            <Text style={styles.summaryValue}>{project.name}</Text>
-            {project.subject ? (
-              <>
-                <Text style={[styles.summaryLabel, { marginTop: 8 }]}>
-                  Subject
-                </Text>
-                <Text style={styles.summaryValue}>{project.subject}</Text>
-              </>
-            ) : null}
-          </View>
-        ) : null}
-
-        <TouchableOpacity style={styles.finishBtn} onPress={handleFinish}>
-          <Text style={styles.finishBtnText}>Finish</Text>
-          <Ionicons name="chevron-forward" size={18} color="#fff" />
-        </TouchableOpacity>
+        {/* Finish button */}
+        <View style={styles.finishRow}>
+          <TouchableOpacity style={styles.finishBtn} onPress={handleFinish}>
+            <Text style={styles.finishBtnText}>Finish</Text>
+            <Ionicons name="chevron-forward" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -164,12 +249,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: Colors.teal,
   },
-  headerTitle: { flex: 1 },
   headerIcon: {
     width: 32,
     height: 32,
@@ -178,97 +261,146 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  scroll: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flex: 1, backgroundColor: "#EBF5F0" },
   content: { padding: 16, paddingBottom: 40 },
 
   pageTitle: {
     fontSize: 22,
-    fontWeight: "500",
+    fontWeight: "700",
     color: Colors.textPrimary,
-    marginBottom: 20,
-    letterSpacing: -0.4,
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
     color: Colors.textSecondary,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
     marginBottom: 10,
   },
+
+  // Card
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 4,
+    marginBottom: 24,
   },
-  emptyText: {
-    fontSize: 13,
-    color: Colors.textTertiary,
-    textAlign: "center",
-    paddingVertical: 8,
-  },
+
+  // Task row
   taskRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.separator,
+    paddingVertical: 12,
   },
   taskCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 1.5,
-    borderColor: "#C7C7CC",
+    borderColor: Colors.teal,
     flexShrink: 0,
   },
-  taskName: { flex: 1, fontSize: 13, color: Colors.textPrimary },
-  editIcon: { marginRight: -2 },
-
-  addRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingTop: 10,
-    marginTop: 4,
-  },
-  addInput: {
+  taskName: {
     flex: 1,
-    fontSize: 13,
-    color: Colors.textPrimary,
-  },
-
-  summaryCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-  },
-  summaryLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-    color: Colors.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  summaryValue: {
     fontSize: 14,
     color: Colors.textPrimary,
     fontWeight: "500",
   },
+  taskNameInput: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    fontWeight: "500",
+    padding: 0,
+  },
+  taskAction: { padding: 2 },
+  taskDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#EEF5F1",
+    marginVertical: 2,
+  },
 
-  finishBtn: {
-    backgroundColor: Colors.teal,
-    borderRadius: 12,
-    paddingVertical: 14,
+  // Member row
+  memberRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 8,
+    gap: 8,
+    marginLeft: 32,
+    marginBottom: 6,
   },
-  finishBtnText: { fontSize: 15, fontWeight: "500", color: "#fff" },
+  memberAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#FF6B35",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  memberAvatarText: { fontSize: 9, fontWeight: "700", color: "#fff" },
+  memberName: { flex: 1, fontSize: 13, color: Colors.textPrimary },
+  removeBtn: {
+    backgroundColor: Colors.destructive,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  removeBtnText: { fontSize: 11, fontWeight: "600", color: "#fff" },
+
+  // Add member
+  addMemberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 32,
+    marginBottom: 10,
+  },
+  addMemberCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Colors.teal,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addMemberText: { fontSize: 13, color: Colors.teal, fontWeight: "500" },
+
+  // Add New Task
+  addNewTaskRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 14,
+  },
+  addNewTaskRowBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#EEF5F1",
+  },
+  addNewCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.teal,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addNewTaskText: { fontSize: 14, color: Colors.teal, fontWeight: "500" },
+
+  // Finish button
+  finishRow: { alignItems: "flex-end" },
+  finishBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.teal,
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    borderRadius: 99,
+  },
+  finishBtnText: { fontSize: 15, fontWeight: "600", color: "#fff" },
 });

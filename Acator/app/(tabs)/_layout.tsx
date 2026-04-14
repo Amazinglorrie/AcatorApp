@@ -5,14 +5,17 @@ import { Colors } from "../../constants/theme";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
-interface TabIconProps {
+function TabIcon({
+  name,
+  activeName,
+  label,
+  focused,
+}: {
   name: IoniconsName;
   activeName: IoniconsName;
   label: string;
   focused: boolean;
-}
-
-function TabIcon({ name, activeName, label, focused }: TabIconProps) {
+}) {
   if (focused) {
     return (
       <View style={styles.activeWrap}>
@@ -54,13 +57,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="projects"
+        name="chat"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon
-              name="folder-outline"
-              activeName="folder"
-              label="Projects"
+              name="chatbubble-outline"
+              activeName="chatbubble"
+              label="Chat"
               focused={focused}
             />
           ),
@@ -116,11 +119,7 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     paddingTop: 0,
   },
-
-  activeWrap: {
-    alignItems: "center",
-    marginTop: -22,
-  },
+  activeWrap: { alignItems: "center", marginTop: -22 },
   activeBubble: {
     width: 50,
     height: 50,
@@ -132,20 +131,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 3,
   },
-  activeLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: "#fff",
-  },
-
+  activeLabel: { fontSize: 10, fontWeight: "500", color: "#fff" },
   inactiveWrap: {
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
     paddingTop: 6,
   },
-  inactiveLabel: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.65)",
-  },
+  inactiveLabel: { fontSize: 10, color: "rgba(255,255,255,0.65)" },
 });

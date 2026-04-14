@@ -1,9 +1,41 @@
+import { Session } from "@supabase/supabase-js";
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { supabase } from "../lib/supabase";
 
-export default function TaskLayout() {
+export default function RootLayout() {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (session === undefined) return null;
+
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="new" />
-    </Stack>
+    <SafeAreaProvider>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }}>
+        {session ? (
+          <>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="project" />
+            <Stack.Screen name="task" />
+          </>
+        ) : (
+          <Stack.Screen name="(auth)" />
+        )}
+      </Stack>
+    </SafeAreaProvider>
   );
 }

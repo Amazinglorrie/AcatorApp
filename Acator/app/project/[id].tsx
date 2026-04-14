@@ -42,7 +42,6 @@ const STATUS_COLOR: Record<Project["status"], { bg: string; text: string }> = {
 
 const PRIORITY_OPTIONS = ["Low", "Medium", "High"] as const;
 type Priority = (typeof PRIORITY_OPTIONS)[number];
-
 const PRIORITY_COLOR: Record<Priority, string> = {
   Low: Colors.success,
   Medium: Colors.warning,
@@ -114,15 +113,14 @@ export default function TaskDetailScreen() {
   const handleAddTask = async () => {
     const name = newTaskName.trim();
     if (!name || !project) return;
-    const task: Task = {
+    await saveTask({
       id: Date.now().toString(),
       projectId: project.id,
       name,
       dueDate: project.dueDate,
       status: "pending",
       createdAt: new Date().toISOString(),
-    };
-    await saveTask(task);
+    });
     setNewTaskName("");
     await load();
   };
@@ -136,15 +134,14 @@ export default function TaskDetailScreen() {
   const handleSendComment = async () => {
     const text = newComment.trim();
     if (!text || !project) return;
-    const comment: Comment = {
+    await addComment({
       id: Date.now().toString(),
       projectId: project.id,
       author: "You",
       initials: "YO",
       text,
       createdAt: new Date().toISOString(),
-    };
-    await addComment(comment);
+    });
     setNewComment("");
     await load();
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
@@ -179,384 +176,399 @@ export default function TaskDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* Teal header */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <View style={styles.headerSpacer} />
+        <View style={{ flex: 1 }} />
         <TouchableOpacity
           onPress={() => router.push(`/project/edit?id=${project.id}`)}
           hitSlop={10}
-          style={styles.headerBtn}
+          style={{ marginRight: 8 }}
         >
           <Ionicons name="create-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleDeleteProject} hitSlop={10}>
+          <Ionicons name="trash-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "overview" && styles.tabActive]}
-          onPress={() => setActiveTab("overview")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "overview" && styles.tabTextActive,
-            ]}
+        {(["overview", "kanban"] as const).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.tabActive]}
+            onPress={() => setActiveTab(tab)}
           >
-            Overview
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "kanban" && styles.tabActive]}
-          onPress={() => setActiveTab("kanban")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "kanban" && styles.tabTextActive,
-            ]}
-          >
-            Kanban
-          </Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.tabTextActive,
+              ]}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity style={styles.tab}>
+          <Text style={styles.tabText}>Chat</Text>
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      {/* ── KANBAN TAB ── horizontally scrollable, full height */}
+      {activeTab === "kanban" ? (
         <ScrollView
-          ref={scrollRef}
-          style={styles.scroll}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.kanbanOuter}
+          contentContainerStyle={styles.kanbanContent}
         >
-          {activeTab === "overview" ? (
-            <>
-              {/* Title + status badge */}
-              <View style={styles.titleRow}>
-                <Text style={styles.projectName}>{project.name}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: bg }]}>
-                  <Text style={[styles.statusBadgeText, { color: text }]}>
-                    {STATUS_LABELS[project.status]}
+          {/* Backlog column */}
+          <View style={styles.kanbanCol}>
+            <View
+              style={[
+                styles.kanbanColHeader,
+                { backgroundColor: Colors.destructive },
+              ]}
+            >
+              <Text style={styles.kanbanColTitle}>Backlog</Text>
+              <Ionicons name="create-outline" size={16} color="#fff" />
+            </View>
+            {pending.length === 0 && (
+              <View style={styles.kanbanCard}>
+                <Text style={styles.kanbanEmpty}>No tasks</Text>
+              </View>
+            )}
+            {pending.map((t) => (
+              <TouchableOpacity
+                key={t.id}
+                style={styles.kanbanCard}
+                onPress={() => handleToggle(t.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.kanbanTaskName}>{t.name}</Text>
+                <View style={styles.taskChip}>
+                  <Text style={styles.taskChipText}>Task</Text>
+                </View>
+                <View style={styles.kanbanCardFooter}>
+                  <Text style={styles.kanbanDue}>
+                    {formatDueDate(t.dueDate)}
+                  </Text>
+                  <View
+                    style={[
+                      styles.kanbanAvatar,
+                      { backgroundColor: Colors.teal },
+                    ]}
+                  >
+                    <Text style={styles.kanbanAvatarText}>CH</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* In Progress column */}
+          <View style={styles.kanbanCol}>
+            <View
+              style={[styles.kanbanColHeader, { backgroundColor: "#FFB300" }]}
+            >
+              <Text style={styles.kanbanColTitle}>In Progress</Text>
+            </View>
+            {pending.slice(0, 1).map((t) => (
+              <TouchableOpacity
+                key={`ip-${t.id}`}
+                style={styles.kanbanCard}
+                onPress={() => handleToggle(t.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.kanbanTaskName}>{t.name}</Text>
+                <View style={styles.taskChip}>
+                  <Text style={styles.taskChipText}>Task</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            {pending.length === 0 && (
+              <View style={styles.kanbanCard}>
+                <Text style={styles.kanbanEmpty}>Nothing here</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Done column */}
+          <View style={styles.kanbanCol}>
+            <View
+              style={[
+                styles.kanbanColHeader,
+                { backgroundColor: Colors.success },
+              ]}
+            >
+              <Text style={styles.kanbanColTitle}>Done</Text>
+            </View>
+            {completed.length === 0 && (
+              <View style={styles.kanbanCard}>
+                <Text style={styles.kanbanEmpty}>No completed tasks</Text>
+              </View>
+            )}
+            {completed.map((t) => (
+              <TouchableOpacity
+                key={t.id}
+                style={styles.kanbanCard}
+                onPress={() => handleToggle(t.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.kanbanTaskName, styles.kanbanTaskDone]}>
+                  {t.name}
+                </Text>
+                <View
+                  style={[
+                    styles.taskChip,
+                    { backgroundColor: Colors.badgeBg.green },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.taskChipText,
+                      { color: Colors.badgeText.green },
+                    ]}
+                  >
+                    Done
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      ) : (
+        /* ── OVERVIEW TAB ── vertical scroll */
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Title + status */}
+            <View style={styles.titleRow}>
+              <Text style={styles.projectName}>{project.name}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: bg }]}>
+                <Text style={[styles.statusBadgeText, { color: text }]}>
+                  {STATUS_LABELS[project.status]}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.subject}>{project.subject}</Text>
+
+            {/* Description card */}
+            <View style={styles.card}>
+              <View style={styles.cardTitleRow}>
+                <Text style={styles.cardLabel}>Description</Text>
+                <TouchableOpacity
+                  onPress={() => router.push(`/project/edit?id=${project.id}`)}
+                  hitSlop={8}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={16}
+                    color={Colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.description}>
+                {project.description || "No description."}
+              </Text>
+
+              <View style={styles.metaRow}>
+                <View style={styles.metaCol}>
+                  <Text style={styles.metaLabel}>ASSIGNEE</Text>
+                  <View style={styles.assigneeRow}>
+                    <View
+                      style={[
+                        styles.assigneeAvatar,
+                        { backgroundColor: Colors.teal },
+                      ]}
+                    >
+                      <Text style={styles.assigneeAvatarText}>CH</Text>
+                    </View>
+                    <Text style={styles.assigneeName}>Cecilia H</Text>
+                  </View>
+                </View>
+                <View style={styles.metaCol}>
+                  <Text style={styles.metaLabel}>DUE DATE:</Text>
+                  <View style={styles.dueDateRow}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={13}
+                      color={Colors.teal}
+                    />
+                    <Text style={styles.dueDateText}>
+                      {formatDueDate(project.dueDate)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.metaRow}>
+                <View style={styles.metaCol}>
+                  <Text style={styles.metaLabel}>PRIORITY</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowPriorityPicker(!showPriorityPicker)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.priorityText,
+                        { color: PRIORITY_COLOR[priority] },
+                      ]}
+                    >
+                      {priority}
+                    </Text>
+                  </TouchableOpacity>
+                  {showPriorityPicker && (
+                    <View style={styles.priorityDropdown}>
+                      {PRIORITY_OPTIONS.map((p) => (
+                        <TouchableOpacity
+                          key={p}
+                          style={styles.priorityOption}
+                          onPress={() => {
+                            setPriority(p);
+                            setShowPriorityPicker(false);
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.priorityOptionText,
+                              { color: PRIORITY_COLOR[p] },
+                            ]}
+                          >
+                            {p}
+                          </Text>
+                          {p === priority && (
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color={Colors.teal}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+                <View style={styles.metaCol}>
+                  <Text style={styles.metaLabel}>TASK PROGRESS (%):</Text>
+                  <Text style={[styles.priorityText, { color: Colors.teal }]}>
+                    {progress}%
                   </Text>
                 </View>
               </View>
-              <Text style={styles.subject}>{project.subject}</Text>
+            </View>
 
-              {/* Description card */}
-              <View style={styles.card}>
-                <View style={styles.cardTitleRow}>
-                  <Text style={styles.cardLabel}>Description</Text>
+            {/* Subtasks */}
+            <View style={styles.subtasksHeader}>
+              <Text style={styles.subtasksTitle}>
+                Subtasks{" "}
+                <Text style={styles.subtasksCount}>
+                  {done}/{tasks.length}
+                </Text>
+              </Text>
+              <Text style={styles.addSubtaskText}>+ Add subtask</Text>
+            </View>
+            <View style={styles.progressBg}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${progress}%`, backgroundColor: barColor },
+                ]}
+              />
+            </View>
+            <View style={styles.taskList}>
+              {tasks.map((t) => (
+                <TouchableOpacity
+                  key={t.id}
+                  style={styles.subtaskRow}
+                  onPress={() => handleToggle(t.id)}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[
+                      styles.subtaskCheck,
+                      t.status === "done" && styles.subtaskCheckDone,
+                    ]}
+                  >
+                    {t.status === "done" && (
+                      <Ionicons name="checkmark" size={12} color="#fff" />
+                    )}
+                  </View>
+                  <Text
+                    style={[
+                      styles.subtaskName,
+                      t.status === "done" && styles.subtaskNameDone,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {t.name}
+                  </Text>
                   <TouchableOpacity
-                    onPress={() =>
-                      router.push(`/project/edit?id=${project.id}`)
-                    }
+                    onPress={() => handleDeleteTask(t.id)}
                     hitSlop={8}
                   >
                     <Ionicons
-                      name="create-outline"
-                      size={16}
+                      name="reorder-three-outline"
+                      size={18}
                       color={Colors.textTertiary}
                     />
                   </TouchableOpacity>
-                </View>
-                <Text style={styles.description}>
-                  {project.description || "No description."}
-                </Text>
-
-                {/* Assignee + Due date */}
-                <View style={styles.metaRow}>
-                  <View style={styles.metaCol}>
-                    <Text style={styles.metaLabel}>ASSIGNEE</Text>
-                    <View style={styles.assigneeRow}>
-                      <View
-                        style={[
-                          styles.assigneeAvatar,
-                          { backgroundColor: Colors.teal },
-                        ]}
-                      >
-                        <Text style={styles.assigneeAvatarText}>CH</Text>
-                      </View>
-                      <Text style={styles.assigneeName}>Cecilia H</Text>
-                    </View>
-                  </View>
-                  <View style={styles.metaCol}>
-                    <Text style={styles.metaLabel}>DUE DATE:</Text>
-                    <View style={styles.dueDateRow}>
-                      <Ionicons
-                        name="calendar-outline"
-                        size={13}
-                        color={Colors.teal}
-                      />
-                      <Text style={styles.dueDateText}>
-                        {formatDueDate(project.dueDate)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Priority + Progress */}
-                <View style={styles.metaRow}>
-                  <View style={styles.metaCol}>
-                    <Text style={styles.metaLabel}>PRIORITY</Text>
-                    <TouchableOpacity
-                      onPress={() => setShowPriorityPicker(!showPriorityPicker)}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.priorityText,
-                          { color: PRIORITY_COLOR[priority] },
-                        ]}
-                      >
-                        {priority}
-                      </Text>
-                    </TouchableOpacity>
-                    {showPriorityPicker && (
-                      <View style={styles.priorityDropdown}>
-                        {PRIORITY_OPTIONS.map((p) => (
-                          <TouchableOpacity
-                            key={p}
-                            style={styles.priorityOption}
-                            onPress={() => {
-                              setPriority(p);
-                              setShowPriorityPicker(false);
-                            }}
-                          >
-                            <Text
-                              style={[
-                                styles.priorityOptionText,
-                                { color: PRIORITY_COLOR[p] },
-                              ]}
-                            >
-                              {p}
-                            </Text>
-                            {p === priority && (
-                              <Ionicons
-                                name="checkmark"
-                                size={14}
-                                color={Colors.teal}
-                              />
-                            )}
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.metaCol}>
-                    <Text style={styles.metaLabel}>TASK PROGRESS (%):</Text>
-                    <Text style={[styles.priorityText, { color: Colors.teal }]}>
-                      {progress}%
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Subtasks */}
-              <View style={styles.subtasksHeader}>
-                <Text style={styles.subtasksTitle}>
-                  Subtasks{" "}
-                  <Text style={styles.subtasksCount}>
-                    {done}/{tasks.length}
-                  </Text>
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {}}
-                  style={styles.addSubtaskBtn}
-                >
-                  <Text style={styles.addSubtaskText}>+ Add subtask</Text>
                 </TouchableOpacity>
-              </View>
-
-              {/* Progress bar */}
-              <View style={styles.progressBg}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${progress}%`, backgroundColor: barColor },
-                  ]}
+              ))}
+              <View style={styles.addTaskRow}>
+                <View style={styles.subtaskCheckEmpty} />
+                <TextInput
+                  style={styles.addTaskInput}
+                  placeholder="Add a subtask…"
+                  placeholderTextColor={Colors.textTertiary}
+                  value={newTaskName}
+                  onChangeText={setNewTaskName}
+                  onSubmitEditing={handleAddTask}
+                  returnKeyType="done"
                 />
               </View>
+            </View>
 
-              {/* Task list */}
-              <View style={styles.taskList}>
-                {tasks.map((t) => (
-                  <TouchableOpacity
-                    key={t.id}
-                    style={styles.subtaskRow}
-                    onPress={() => handleToggle(t.id)}
-                    activeOpacity={0.7}
+            {/* Comments */}
+            <Text style={styles.commentsTitle}>Comments</Text>
+            {comments.length > 0 && (
+              <Text style={styles.commentsTime}>
+                Today at {formatCommentTime(comments[0].createdAt)}
+              </Text>
+            )}
+            {comments.map((c) => {
+              const av = avatarColor(c.initials);
+              return (
+                <View key={c.id} style={styles.commentRow}>
+                  <View
+                    style={[styles.commentAvatar, { backgroundColor: av.bg }]}
                   >
-                    <View
-                      style={[
-                        styles.subtaskCheck,
-                        t.status === "done" && styles.subtaskCheckDone,
-                      ]}
-                    >
-                      {t.status === "done" && (
-                        <Ionicons name="checkmark" size={12} color="#fff" />
-                      )}
-                    </View>
-                    <Text
-                      style={[
-                        styles.subtaskName,
-                        t.status === "done" && styles.subtaskNameDone,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {t.name}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => handleDeleteTask(t.id)}
-                      hitSlop={8}
-                    >
-                      <Ionicons
-                        name="reorder-three-outline"
-                        size={18}
-                        color={Colors.textTertiary}
-                      />
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                ))}
-
-                {/* Add task input */}
-                <View style={styles.addTaskRow}>
-                  <View style={styles.subtaskCheckEmpty} />
-                  <TextInput
-                    style={styles.addTaskInput}
-                    placeholder="Add a subtask…"
-                    placeholderTextColor={Colors.textTertiary}
-                    value={newTaskName}
-                    onChangeText={setNewTaskName}
-                    onSubmitEditing={handleAddTask}
-                    returnKeyType="done"
-                  />
-                </View>
-              </View>
-
-              {/* Comments section */}
-              <Text style={styles.commentsTitle}>Comments</Text>
-              {comments.length > 0 && (
-                <Text style={styles.commentsTime}>
-                  Today at {formatCommentTime(comments[0].createdAt)}
-                </Text>
-              )}
-
-              {comments.map((c) => {
-                const av = avatarColor(c.initials);
-                return (
-                  <View key={c.id} style={styles.commentRow}>
-                    <View
-                      style={[styles.commentAvatar, { backgroundColor: av.bg }]}
-                    >
-                      <Text style={styles.commentAvatarText}>{c.initials}</Text>
-                    </View>
-                    <View style={styles.commentBody}>
-                      <Text style={styles.commentAuthor}>{c.author}</Text>
-                      <Text style={styles.commentText}>{c.text}</Text>
-                    </View>
+                    <Text style={styles.commentAvatarText}>{c.initials}</Text>
                   </View>
-                );
-              })}
-
-              {comments.length === 0 && (
-                <Text style={styles.noComments}>
-                  No comments yet. Start the conversation!
-                </Text>
-              )}
-            </>
-          ) : (
-            <>
-              {/* Kanban pending */}
-              <View style={styles.kanbanCol}>
-                <View
-                  style={[
-                    styles.kanbanHeader,
-                    { backgroundColor: Colors.destructive },
-                  ]}
-                >
-                  <Text style={styles.kanbanHeaderText}>Pending</Text>
-                  <Ionicons name="create-outline" size={16} color="#fff" />
-                </View>
-                {pending.length === 0 && (
-                  <View style={styles.kanbanCard}>
-                    <Text style={styles.kanbanEmpty}>No pending tasks</Text>
+                  <View style={styles.commentBody}>
+                    <Text style={styles.commentAuthor}>{c.author}</Text>
+                    <Text style={styles.commentText}>{c.text}</Text>
                   </View>
-                )}
-                {pending.map((t) => (
-                  <TouchableOpacity
-                    key={t.id}
-                    style={styles.kanbanCard}
-                    onPress={() => handleToggle(t.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.kanbanTaskName}>{t.name}</Text>
-                    <View style={styles.taskChip}>
-                      <Text style={styles.taskChipText}>Task</Text>
-                    </View>
-                    <Text style={styles.kanbanDue}>
-                      {formatDueDate(t.dueDate)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Kanban done */}
-              <View style={styles.kanbanCol}>
-                <View
-                  style={[
-                    styles.kanbanHeader,
-                    { backgroundColor: Colors.success },
-                  ]}
-                >
-                  <Text style={styles.kanbanHeaderText}>Done</Text>
                 </View>
-                {completed.length === 0 && (
-                  <View style={styles.kanbanCard}>
-                    <Text style={styles.kanbanEmpty}>No completed tasks</Text>
-                  </View>
-                )}
-                {completed.map((t) => (
-                  <TouchableOpacity
-                    key={t.id}
-                    style={styles.kanbanCard}
-                    onPress={() => handleToggle(t.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[styles.kanbanTaskName, styles.kanbanTaskDone]}
-                    >
-                      {t.name}
-                    </Text>
-                    <View
-                      style={[
-                        styles.taskChip,
-                        { backgroundColor: Colors.badgeBg.green },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.taskChipText,
-                          { color: Colors.badgeText.green },
-                        ]}
-                      >
-                        Done
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
-        </ScrollView>
+              );
+            })}
+            {comments.length === 0 && (
+              <Text style={styles.noComments}>No comments yet.</Text>
+            )}
+          </ScrollView>
 
-        {/* Comment input bar */}
-        {activeTab === "overview" && (
+          {/* Comment input bar */}
           <View style={styles.commentInputBar}>
             <View
               style={[styles.commentAvatar, { backgroundColor: Colors.teal }]}
@@ -579,15 +591,14 @@ export default function TaskDetailScreen() {
               <Ionicons name="send" size={15} color="#fff" />
             </TouchableOpacity>
           </View>
-        )}
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.teal },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -595,9 +606,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: Colors.teal,
   },
-  headerSpacer: { flex: 1 },
-  headerBtn: { marginLeft: 12 },
-
   tabRow: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -612,10 +620,78 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, fontWeight: "500", color: Colors.textSecondary },
   tabTextActive: { color: "#fff" },
 
+  // Kanban
+  kanbanOuter: { flex: 1, backgroundColor: "#EBF5F0" },
+  kanbanContent: {
+    padding: 16,
+    gap: 12,
+    alignItems: "flex-start",
+    paddingBottom: 100,
+  },
+  kanbanCol: { width: 220 },
+  kanbanColHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  kanbanColTitle: { fontSize: 15, fontWeight: "600", color: "#fff" },
+  kanbanCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  kanbanTaskName: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  kanbanTaskDone: {
+    textDecorationLine: "line-through",
+    color: Colors.textTertiary,
+  },
+  kanbanCardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 6,
+  },
+  kanbanDue: { fontSize: 11, color: Colors.textTertiary },
+  kanbanAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  kanbanAvatarText: { fontSize: 10, fontWeight: "600", color: "#fff" },
+  kanbanEmpty: {
+    fontSize: 13,
+    color: Colors.textTertiary,
+    textAlign: "center",
+    paddingVertical: 8,
+  },
+  taskChip: {
+    alignSelf: "flex-start",
+    backgroundColor: Colors.badgeBg.teal,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  taskChipText: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: Colors.badgeText.teal,
+  },
+
+  // Overview
   scroll: { flex: 1, backgroundColor: "#EBF5F0" },
   content: { padding: 16, paddingBottom: 24 },
-
-  // Title
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -633,8 +709,6 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99 },
   statusBadgeText: { fontSize: 12, fontWeight: "600" },
   subject: { fontSize: 12, color: Colors.textSecondary, marginBottom: 14 },
-
-  // Description card
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,
@@ -660,7 +734,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginBottom: 14,
   },
-
   metaRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
   metaCol: { flex: 1 },
   metaLabel: {
@@ -671,7 +744,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 5,
   },
-
   assigneeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   assigneeAvatar: {
     width: 26,
@@ -682,10 +754,8 @@ const styles = StyleSheet.create({
   },
   assigneeAvatarText: { fontSize: 10, fontWeight: "600", color: "#fff" },
   assigneeName: { fontSize: 13, fontWeight: "500", color: Colors.textPrimary },
-
   dueDateRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   dueDateText: { fontSize: 13, fontWeight: "500", color: Colors.teal },
-
   priorityText: { fontSize: 13, fontWeight: "600" },
   priorityDropdown: {
     position: "absolute",
@@ -709,8 +779,6 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.separator,
   },
   priorityOptionText: { fontSize: 13, fontWeight: "500" },
-
-  // Subtasks
   subtasksHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -719,9 +787,7 @@ const styles = StyleSheet.create({
   },
   subtasksTitle: { fontSize: 15, fontWeight: "600", color: Colors.textPrimary },
   subtasksCount: { color: Colors.textTertiary, fontWeight: "400" },
-  addSubtaskBtn: {},
   addSubtaskText: { fontSize: 13, color: Colors.teal, fontWeight: "500" },
-
   progressBg: {
     height: 6,
     backgroundColor: "#D0EAE0",
@@ -730,7 +796,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   progressFill: { height: "100%", borderRadius: 99 },
-
   taskList: {
     backgroundColor: "#fff",
     borderRadius: 16,
@@ -769,8 +834,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   addTaskInput: { flex: 1, fontSize: 14, color: Colors.textPrimary },
-
-  // Comments
   commentsTitle: {
     fontSize: 15,
     fontWeight: "600",
@@ -797,8 +860,6 @@ const styles = StyleSheet.create({
   },
   commentText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
   noComments: { fontSize: 13, color: Colors.textTertiary, paddingVertical: 8 },
-
-  // Comment input
   commentInputBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -827,53 +888,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.teal,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  // Kanban
-  kanbanCol: { marginBottom: 14 },
-  kanbanHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    marginBottom: 2,
-  },
-  kanbanHeaderText: { fontSize: 13, fontWeight: "500", color: "#fff" },
-  kanbanCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 6,
-  },
-  kanbanTaskName: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: Colors.textPrimary,
-    marginBottom: 6,
-  },
-  kanbanTaskDone: {
-    textDecorationLine: "line-through",
-    color: Colors.textTertiary,
-  },
-  kanbanDue: { fontSize: 11, color: Colors.textTertiary, marginTop: 4 },
-  kanbanEmpty: {
-    fontSize: 13,
-    color: Colors.textTertiary,
-    textAlign: "center",
-    paddingVertical: 4,
-  },
-  taskChip: {
-    alignSelf: "flex-start",
-    backgroundColor: Colors.badgeBg.teal,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  taskChipText: {
-    fontSize: 11,
-    fontWeight: "500",
-    color: Colors.badgeText.teal,
   },
 });

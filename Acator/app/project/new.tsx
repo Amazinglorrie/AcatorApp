@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DatePickerModal from "../../components/DatePickerModal";
 import {
   Colors,
   PROJECT_COLORS,
@@ -18,13 +19,14 @@ import {
   colorBarFill,
 } from "../../constants/theme";
 import { Project, ProjectColor } from "../../constants/types";
+import { formatDueDate } from "../../constants/utils";
 
 const PRIORITY_OPTIONS = ["Low", "Medium", "High"] as const;
 type Priority = (typeof PRIORITY_OPTIONS)[number];
 
 const PRIORITY_COLOR: Record<Priority, string> = {
   Low: Colors.success,
-  Medium: Colors.warning,
+  Medium: "#FFB300",
   High: Colors.destructive,
 };
 
@@ -38,22 +40,9 @@ export default function NewProjectScreen() {
   const [dueDate, setDueDate] = useState("");
   const [color, setColor] = useState<ProjectColor>("teal");
   const [priority, setPriority] = useState<Priority>("Medium");
-  const [showSubjectPicker, setShowSubjectPicker] = useState(false);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
-
-  // Simple date parser: accepts DD/MM/YYYY → YYYY-MM-DD
-  const parseDate = (raw: string): string => {
-    const parts = raw.split("/");
-    if (parts.length === 3) {
-      const [d, m, y] = parts;
-      if (d && m && y && y.length === 4)
-        return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-    }
-    // fallback: try today + 7 days
-    const fallback = new Date();
-    fallback.setDate(fallback.getDate() + 7);
-    return fallback.toISOString().split("T")[0];
-  };
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
 
   const handleNext = () => {
     if (!name.trim()) {
@@ -65,12 +54,17 @@ export default function NewProjectScreen() {
       name: name.trim(),
       subject,
       description: description.trim(),
-      dueDate: parseDate(dueDate) || parseDate(""),
+      dueDate:
+        dueDate ||
+        (() => {
+          const d = new Date();
+          d.setDate(d.getDate() + 7);
+          return d.toISOString().split("T")[0];
+        })(),
       status: "not-started",
       color,
       createdAt: new Date().toISOString(),
     };
-    // Pass project via router params to step 2
     router.push({
       pathname: "/project/new-tasks",
       params: { projectJson: JSON.stringify(project) },
@@ -79,13 +73,14 @@ export default function NewProjectScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* Teal header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} />
+        <View style={{ flex: 1 }} />
         <View style={styles.headerIcon}>
-          <Ionicons name="settings-outline" size={16} color="#fff" />
+          <Ionicons name="bookmark-outline" size={16} color="#fff" />
         </View>
       </View>
 
@@ -97,143 +92,105 @@ export default function NewProjectScreen() {
       >
         <Text style={styles.pageTitle}>New Project</Text>
 
-        <Text style={styles.label}>Title</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Title"
-          placeholderTextColor={Colors.textTertiary}
-          value={name}
-          onChangeText={setName}
-        />
-
-        <Text style={styles.label}>Description</Text>
-        <TextInput
-          style={[styles.input, styles.textarea]}
-          placeholder="Description"
-          placeholderTextColor={Colors.textTertiary}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={3}
-          textAlignVertical="top"
-        />
-
-        <View style={styles.dateRow}>
-          <View style={styles.dateField}>
-            <Text style={styles.label}>Start date</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="DD/MM/YYYY"
-              placeholderTextColor={Colors.textTertiary}
-              value={startDate}
-              onChangeText={setStartDate}
-              keyboardType="numbers-and-punctuation"
-            />
-          </View>
-          <View style={styles.dateField}>
-            <Text style={styles.label}>Due date</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="DD/MM/YYYY"
-              placeholderTextColor={Colors.textTertiary}
-              value={dueDate}
-              onChangeText={setDueDate}
-              keyboardType="numbers-and-punctuation"
-            />
-          </View>
+        {/* Card 1: Title + Description */}
+        <View style={styles.card}>
+          <TextInput
+            style={styles.cardInput}
+            placeholder="Title"
+            placeholderTextColor={Colors.textTertiary}
+            value={name}
+            onChangeText={setName}
+          />
+          <View style={styles.cardDivider} />
+          <TextInput
+            style={[styles.cardInput, { minHeight: 60 }]}
+            placeholder="Description"
+            placeholderTextColor={Colors.textTertiary}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            textAlignVertical="top"
+          />
         </View>
 
-        <Text style={styles.label}>Subject</Text>
-        <TouchableOpacity
-          style={styles.pickerBtn}
-          onPress={() => setShowSubjectPicker(!showSubjectPicker)}
-        >
-          <Text style={styles.pickerBtnText}>{subject}</Text>
-          <Ionicons
-            name={showSubjectPicker ? "chevron-up" : "chevron-down"}
-            size={16}
-            color={Colors.textSecondary}
-          />
-        </TouchableOpacity>
-        {showSubjectPicker && (
-          <View style={styles.pickerList}>
-            {PROJECT_SUBJECTS.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={styles.pickerItem}
-                onPress={() => {
-                  setSubject(s);
-                  setShowSubjectPicker(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.pickerItemText,
-                    s === subject && styles.pickerItemTextActive,
-                  ]}
-                >
-                  {s}
-                </Text>
-                {s === subject && (
-                  <Ionicons name="checkmark" size={16} color={Colors.teal} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+        {/* Card 2: Start date, Due date, Priority */}
+        <View style={styles.card}>
+          {/* Start date */}
+          <TouchableOpacity
+            style={styles.inlineRow}
+            onPress={() => setShowStartDatePicker(true)}
+          >
+            <Text style={styles.inlineLabel}>Start date:</Text>
+            <Text
+              style={[
+                styles.inlineValue,
+                !startDate && styles.inlinePlaceholder,
+              ]}
+            >
+              {startDate ? formatDueDate(startDate) : "DD/MM/YYYY"}
+            </Text>
+          </TouchableOpacity>
 
-        <Text style={styles.label}>Priority</Text>
-        <TouchableOpacity
-          style={styles.pickerBtn}
-          onPress={() => setShowPriorityPicker(!showPriorityPicker)}
-        >
-          <View
-            style={[
-              styles.priorityDot,
-              { backgroundColor: PRIORITY_COLOR[priority] },
-            ]}
-          />
-          <Text style={styles.pickerBtnText}>{priority}</Text>
-          <Ionicons
-            name={showPriorityPicker ? "chevron-up" : "chevron-down"}
-            size={16}
-            color={Colors.textSecondary}
-          />
-        </TouchableOpacity>
-        {showPriorityPicker && (
-          <View style={styles.pickerList}>
-            {PRIORITY_OPTIONS.map((p) => (
-              <TouchableOpacity
-                key={p}
-                style={styles.pickerItem}
-                onPress={() => {
-                  setPriority(p);
-                  setShowPriorityPicker(false);
-                }}
-              >
-                <View
-                  style={[
-                    styles.priorityDot,
-                    { backgroundColor: PRIORITY_COLOR[p] },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.pickerItemText,
-                    p === priority && styles.pickerItemTextActive,
-                  ]}
-                >
-                  {p}
-                </Text>
-                {p === priority && (
-                  <Ionicons name="checkmark" size={16} color={Colors.teal} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+          <View style={styles.cardDivider} />
 
-        <Text style={styles.label}>Color</Text>
+          {/* Due date */}
+          <TouchableOpacity
+            style={styles.inlineRow}
+            onPress={() => setShowDueDatePicker(true)}
+          >
+            <Text style={styles.inlineLabel}>Due date:</Text>
+            <Text
+              style={[styles.inlineValue, !dueDate && styles.inlinePlaceholder]}
+            >
+              {dueDate ? formatDueDate(dueDate) : "DD/MM/YYYY"}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.cardDivider} />
+
+          {/* Priority */}
+          <View style={styles.inlineRow}>
+            <Text style={styles.inlineLabel}>Priority:</Text>
+            <TouchableOpacity
+              style={[
+                styles.priorityPill,
+                { backgroundColor: PRIORITY_COLOR[priority] },
+              ]}
+              onPress={() => setShowPriorityPicker(!showPriorityPicker)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.priorityPillText}>{priority}</Text>
+              <Ionicons name="chevron-down" size={13} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          {showPriorityPicker && (
+            <View style={styles.priorityDropdown}>
+              {PRIORITY_OPTIONS.map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  style={styles.priorityOption}
+                  onPress={() => {
+                    setPriority(p);
+                    setShowPriorityPicker(false);
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.priorityDot,
+                      { backgroundColor: PRIORITY_COLOR[p] },
+                    ]}
+                  />
+                  <Text style={styles.priorityOptionText}>{p}</Text>
+                  {p === priority && (
+                    <Ionicons name="checkmark" size={14} color={Colors.teal} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Color picker (subtle) */}
         <View style={styles.colorRow}>
           {PROJECT_COLORS.map((c) => (
             <TouchableOpacity
@@ -246,33 +203,57 @@ export default function NewProjectScreen() {
               onPress={() => setColor(c)}
             >
               {c === color && (
-                <Ionicons name="checkmark" size={14} color="#fff" />
+                <Ionicons name="checkmark" size={12} color="#fff" />
               )}
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.label}>Documents</Text>
-        <TouchableOpacity style={styles.dashedBox}>
-          <Ionicons name="add" size={22} color={Colors.textTertiary} />
-          <Text style={styles.dashedBoxText}>Add documents</Text>
+        {/* Documents */}
+        <Text style={styles.sectionLabel}>Documents</Text>
+        <TouchableOpacity style={styles.dashedCard}>
+          <View style={styles.dashedCircle}>
+            <Ionicons name="add" size={20} color={Colors.teal} />
+          </View>
+          <Text style={styles.dashedText}>Add documents</Text>
         </TouchableOpacity>
 
-        <Text style={styles.label}>Members</Text>
-        <TouchableOpacity style={styles.dashedBox}>
-          <Ionicons
-            name="people-outline"
-            size={22}
-            color={Colors.textTertiary}
-          />
-          <Text style={styles.dashedBoxText}>Add members</Text>
+        {/* Members */}
+        <Text style={styles.sectionLabel}>Members</Text>
+        <TouchableOpacity style={styles.dashedCard}>
+          <View style={styles.dashedCircle}>
+            <Ionicons name="add" size={20} color={Colors.teal} />
+          </View>
+          <Text style={styles.dashedText}>Add members</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextBtnText}>Next</Text>
-          <Ionicons name="chevron-forward" size={18} color="#fff" />
-        </TouchableOpacity>
+        {/* Next button */}
+        <View style={styles.nextRow}>
+          <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+            <Text style={styles.nextBtnText}>Next</Text>
+            <Ionicons name="chevron-forward" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      <DatePickerModal
+        visible={showStartDatePicker}
+        value={startDate || new Date().toISOString().split("T")[0]}
+        onConfirm={(date) => {
+          setStartDate(date);
+          setShowStartDatePicker(false);
+        }}
+        onCancel={() => setShowStartDatePicker(false)}
+      />
+      <DatePickerModal
+        visible={showDueDatePicker}
+        value={dueDate || new Date().toISOString().split("T")[0]}
+        onConfirm={(date) => {
+          setDueDate(date);
+          setShowDueDatePicker(false);
+        }}
+        onCancel={() => setShowDueDatePicker(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -282,12 +263,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: Colors.teal,
   },
-  headerTitle: { flex: 1 },
   headerIcon: {
     width: 32,
     height: 32,
@@ -296,108 +275,131 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  scroll: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flex: 1, backgroundColor: "#EBF5F0" },
   content: { padding: 16, paddingBottom: 40 },
 
   pageTitle: {
     fontSize: 22,
-    fontWeight: "500",
+    fontWeight: "700",
     color: Colors.textPrimary,
-    marginBottom: 20,
-    letterSpacing: -0.4,
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
-  label: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: Colors.textSecondary,
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: Colors.textPrimary,
-    borderWidth: 0.5,
-    borderColor: Colors.separator,
-    marginBottom: 14,
-  },
-  textarea: { minHeight: 72, paddingTop: 10 },
 
-  dateRow: { flexDirection: "row", gap: 10 },
-  dateField: { flex: 1 },
-
-  pickerBtn: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 0.5,
-    borderColor: Colors.separator,
-    marginBottom: 6,
-    gap: 8,
-  },
-  pickerBtnText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
-  pickerList: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 0.5,
-    borderColor: Colors.separator,
-    marginBottom: 14,
+  // White cards
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    marginBottom: 12,
     overflow: "hidden",
   },
-  pickerItem: {
+  cardInput: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: Colors.textPrimary,
+  },
+  cardDivider: { height: StyleSheet.hairlineWidth, backgroundColor: "#E8F0EC" },
+
+  // Inline rows inside card
+  inlineRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  inlineLabel: { fontSize: 14, color: Colors.textSecondary },
+  inlineValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: "500" },
+  inlinePlaceholder: { color: Colors.textTertiary, fontWeight: "400" },
+
+  // Priority pill
+  priorityPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 99,
+  },
+  priorityPillText: { fontSize: 13, fontWeight: "600", color: "#fff" },
+  priorityDropdown: {
+    marginHorizontal: 14,
+    marginBottom: 8,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.separator,
+    overflow: "hidden",
+  },
+  priorityOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
   },
-  pickerItemText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
-  pickerItemTextActive: { color: Colors.teal, fontWeight: "500" },
+  priorityDot: { width: 9, height: 9, borderRadius: 5 },
+  priorityOptionText: { flex: 1, fontSize: 13, color: Colors.textPrimary },
 
-  priorityDot: { width: 10, height: 10, borderRadius: 5 },
-
-  colorRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
+  // Color row
+  colorRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
+    paddingHorizontal: 2,
+  },
   colorSwatch: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
   },
-  colorSwatchActive: {
-    borderWidth: 2.5,
-    borderColor: Colors.textPrimary,
-  },
+  colorSwatchActive: { borderWidth: 2.5, borderColor: Colors.textPrimary },
 
-  dashedBox: {
-    borderWidth: 1,
+  // Section labels + dashed cards
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  dashedCard: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderStyle: "dashed",
-    borderColor: Colors.textTertiary,
-    borderRadius: 10,
-    paddingVertical: 18,
+    borderColor: "#C5DDD5",
+    paddingVertical: 20,
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    marginBottom: 14,
+    marginBottom: 16,
   },
-  dashedBoxText: { fontSize: 13, color: Colors.textTertiary },
+  dashedCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Colors.teal,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dashedText: { fontSize: 13, color: Colors.textSecondary },
 
+  // Next button
+  nextRow: { alignItems: "flex-end", marginTop: 8 },
   nextBtn: {
-    backgroundColor: Colors.teal,
-    borderRadius: 12,
-    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 8,
+    gap: 4,
+    backgroundColor: Colors.teal,
+    paddingHorizontal: 24,
+    paddingVertical: 13,
+    borderRadius: 99,
   },
-  nextBtnText: { fontSize: 15, fontWeight: "500", color: "#fff" },
+  nextBtnText: { fontSize: 15, fontWeight: "600", color: "#fff" },
 });
