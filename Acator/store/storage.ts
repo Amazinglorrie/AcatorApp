@@ -3,6 +3,7 @@ import { Project, Task } from "../constants/types";
 
 const PROJECTS_KEY = "studydesk:projects";
 const TASKS_KEY = "studydesk:tasks";
+const COMMENTS_KEY = "studydesk:comments";
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
@@ -18,22 +19,25 @@ export async function getProjects(): Promise<Project[]> {
 export async function saveProject(project: Project): Promise<void> {
   const projects = await getProjects();
   const idx = projects.findIndex((p) => p.id === project.id);
-  if (idx >= 0) {
-    projects[idx] = project;
-  } else {
-    projects.unshift(project);
-  }
+  if (idx >= 0) projects[idx] = project;
+  else projects.unshift(project);
   await AsyncStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
 }
 
 export async function deleteProject(id: string): Promise<void> {
   const projects = await getProjects();
-  const filtered = projects.filter((p) => p.id !== id);
-  await AsyncStorage.setItem(PROJECTS_KEY, JSON.stringify(filtered));
-  // Also delete associated tasks
+  await AsyncStorage.setItem(
+    PROJECTS_KEY,
+    JSON.stringify(projects.filter((p) => p.id !== id)),
+  );
   const tasks = await getTasks();
-  const remainingTasks = tasks.filter((t) => t.projectId !== id);
-  await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(remainingTasks));
+  await AsyncStorage.setItem(
+    TASKS_KEY,
+    JSON.stringify(tasks.filter((t) => t.projectId !== id)),
+  );
+  const comments = await getComments(id);
+  // clear comments for this project
+  await AsyncStorage.removeItem(`${COMMENTS_KEY}:${id}`);
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
@@ -55,18 +59,17 @@ export async function getTasksForProject(projectId: string): Promise<Task[]> {
 export async function saveTask(task: Task): Promise<void> {
   const tasks = await getTasks();
   const idx = tasks.findIndex((t) => t.id === task.id);
-  if (idx >= 0) {
-    tasks[idx] = task;
-  } else {
-    tasks.unshift(task);
-  }
+  if (idx >= 0) tasks[idx] = task;
+  else tasks.unshift(task);
   await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
 }
 
 export async function deleteTask(id: string): Promise<void> {
   const tasks = await getTasks();
-  const filtered = tasks.filter((t) => t.id !== id);
-  await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(filtered));
+  await AsyncStorage.setItem(
+    TASKS_KEY,
+    JSON.stringify(tasks.filter((t) => t.id !== id)),
+  );
 }
 
 export async function toggleTask(id: string): Promise<void> {
@@ -76,6 +79,35 @@ export async function toggleTask(id: string): Promise<void> {
     tasks[idx].status = tasks[idx].status === "done" ? "pending" : "done";
     await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
   }
+}
+
+// ── Comments ──────────────────────────────────────────────────────────────────
+
+export interface Comment {
+  id: string;
+  projectId: string;
+  author: string;
+  initials: string;
+  text: string;
+  createdAt: string; // ISO string
+}
+
+export async function getComments(projectId: string): Promise<Comment[]> {
+  try {
+    const raw = await AsyncStorage.getItem(`${COMMENTS_KEY}:${projectId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addComment(comment: Comment): Promise<void> {
+  const comments = await getComments(comment.projectId);
+  comments.push(comment);
+  await AsyncStorage.setItem(
+    `${COMMENTS_KEY}:${comment.projectId}`,
+    JSON.stringify(comments),
+  );
 }
 
 // ── Seed data ─────────────────────────────────────────────────────────────────
@@ -226,6 +258,26 @@ export async function seedDataIfEmpty(): Promise<void> {
     },
   ];
 
+  const seedComments: Comment[] = [
+    {
+      id: "c1",
+      projectId: "p1",
+      author: "Andres Lagos",
+      initials: "AL",
+      text: "Looks great! Can we adjust the settings flow a bit?",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "c2",
+      projectId: "p1",
+      author: "Cecilia H.",
+      initials: "CH",
+      text: "No problem, I'll get right on it.",
+      createdAt: new Date().toISOString(),
+    },
+  ];
+
   for (const p of seedProjects) await saveProject(p);
   for (const t of seedTasks) await saveTask(t);
+  for (const c of seedComments) await addComment(c);
 }
