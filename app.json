@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Acator",
+    "slug": "acator",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "acator",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0d7a6a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.acator.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0d7a6a"
+      },
+      "package": "com.acator.app"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
