@@ -1,84 +1,101 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Project, Task } from "../constants/types";
+import { supabase } from "../lib/supabase";
 
-const PROJECTS_KEY = "studydesk:projects";
-const TASKS_KEY = "studydesk:tasks";
-const COMMENTS_KEY = "studydesk:comments";
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+
+async function getUserId(): Promise<string> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("Not authenticated");
+  return session.user.id;
+}
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
 export async function getProjects(): Promise<Project[]> {
   try {
-    const raw = await AsyncStorage.getItem(PROJECTS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const userId = await getUserId();
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(dbToProject);
   } catch {
     return [];
   }
 }
 
 export async function saveProject(project: Project): Promise<void> {
-  const projects = await getProjects();
-  const idx = projects.findIndex((p) => p.id === project.id);
-  if (idx >= 0) projects[idx] = project;
-  else projects.unshift(project);
-  await AsyncStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+  const userId = await getUserId();
+  const row = projectToDb(project, userId);
+  const { error } = await supabase.from("projects").upsert(row);
+  if (error) throw error;
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const projects = await getProjects();
-  await AsyncStorage.setItem(
-    PROJECTS_KEY,
-    JSON.stringify(projects.filter((p) => p.id !== id)),
-  );
-  const tasks = await getTasks();
-  await AsyncStorage.setItem(
-    TASKS_KEY,
-    JSON.stringify(tasks.filter((t) => t.projectId !== id)),
-  );
-  const comments = await getComments(id);
-  // clear comments for this project
-  await AsyncStorage.removeItem(`${COMMENTS_KEY}:${id}`);
+  const { error } = await supabase.from("projects").delete().eq("id", id);
+  if (error) throw error;
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 
 export async function getTasks(): Promise<Task[]> {
   try {
-    const raw = await AsyncStorage.getItem(TASKS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const userId = await getUserId();
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(dbToTask);
   } catch {
     return [];
   }
 }
 
 export async function getTasksForProject(projectId: string): Promise<Task[]> {
-  const tasks = await getTasks();
-  return tasks.filter((t) => t.projectId === projectId);
+  try {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(dbToTask);
+  } catch {
+    return [];
+  }
 }
 
 export async function saveTask(task: Task): Promise<void> {
-  const tasks = await getTasks();
-  const idx = tasks.findIndex((t) => t.id === task.id);
-  if (idx >= 0) tasks[idx] = task;
-  else tasks.unshift(task);
-  await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+  const userId = await getUserId();
+  const row = taskToDb(task, userId);
+  const { error } = await supabase.from("tasks").upsert(row);
+  if (error) throw error;
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const tasks = await getTasks();
-  await AsyncStorage.setItem(
-    TASKS_KEY,
-    JSON.stringify(tasks.filter((t) => t.id !== id)),
-  );
+  const { error } = await supabase.from("tasks").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function toggleTask(id: string): Promise<void> {
-  const tasks = await getTasks();
-  const idx = tasks.findIndex((t) => t.id === id);
-  if (idx >= 0) {
-    tasks[idx].status = tasks[idx].status === "done" ? "pending" : "done";
-    await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-  }
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("status")
+    .eq("id", id)
+    .single();
+  if (error || !data) throw error;
+  const newStatus = data.status === "done" ? "pending" : "done";
+  const { error: updateError } = await supabase
+    .from("tasks")
+    .update({ status: newStatus })
+    .eq("id", id);
+  if (updateError) throw updateError;
 }
 
 // ── Comments ──────────────────────────────────────────────────────────────────
@@ -89,25 +106,35 @@ export interface Comment {
   author: string;
   initials: string;
   text: string;
-  createdAt: string; // ISO string
+  createdAt: string;
 }
 
 export async function getComments(projectId: string): Promise<Comment[]> {
   try {
-    const raw = await AsyncStorage.getItem(`${COMMENTS_KEY}:${projectId}`);
-    return raw ? JSON.parse(raw) : [];
+    const { data, error } = await supabase
+      .from("comments")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(dbToComment);
   } catch {
     return [];
   }
 }
 
 export async function addComment(comment: Comment): Promise<void> {
-  const comments = await getComments(comment.projectId);
-  comments.push(comment);
-  await AsyncStorage.setItem(
-    `${COMMENTS_KEY}:${comment.projectId}`,
-    JSON.stringify(comments),
-  );
+  const userId = await getUserId();
+  const { error } = await supabase.from("comments").insert({
+    id: comment.id,
+    user_id: userId,
+    project_id: comment.projectId,
+    author: comment.author,
+    initials: comment.initials,
+    text: comment.text,
+    created_at: comment.createdAt,
+  });
+  if (error) throw error;
 }
 
 // ── Seed data ─────────────────────────────────────────────────────────────────
@@ -116,6 +143,7 @@ export async function seedDataIfEmpty(): Promise<void> {
   const projects = await getProjects();
   if (projects.length > 0) return;
 
+  const userId = await getUserId();
   const today = new Date();
   const addDays = (d: number) => {
     const dt = new Date(today);
@@ -258,26 +286,69 @@ export async function seedDataIfEmpty(): Promise<void> {
     },
   ];
 
-  const seedComments: Comment[] = [
-    {
-      id: "c1",
-      projectId: "p1",
-      author: "Andres Lagos",
-      initials: "AL",
-      text: "Looks great! Can we adjust the settings flow a bit?",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "c2",
-      projectId: "p1",
-      author: "Cecilia H.",
-      initials: "CH",
-      text: "No problem, I'll get right on it.",
-      createdAt: new Date().toISOString(),
-    },
-  ];
-
   for (const p of seedProjects) await saveProject(p);
   for (const t of seedTasks) await saveTask(t);
-  for (const c of seedComments) await addComment(c);
+}
+
+// ── DB mappers ────────────────────────────────────────────────────────────────
+
+function dbToProject(row: any): Project {
+  return {
+    id: row.id,
+    name: row.name,
+    subject: row.subject ?? "",
+    description: row.description ?? "",
+    dueDate: row.due_date ?? "",
+    status: row.status,
+    color: row.color,
+    createdAt: row.created_at,
+  };
+}
+
+function projectToDb(p: Project, userId: string) {
+  return {
+    id: p.id,
+    user_id: userId,
+    name: p.name,
+    subject: p.subject,
+    description: p.description,
+    due_date: p.dueDate,
+    status: p.status,
+    color: p.color,
+    created_at: p.createdAt,
+  };
+}
+
+function dbToTask(row: any): Task {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    name: row.name,
+    dueDate: row.due_date ?? "",
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+function taskToDb(t: Task, userId: string) {
+  return {
+    id: t.id,
+    user_id: userId,
+    project_id: t.projectId,
+    name: t.name,
+    due_date: t.dueDate,
+    status: t.status,
+    created_at: t.createdAt,
+  };
+}
+
+function dbToComment(row: any): Comment {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    author: row.author,
+    initials: row.initials,
+    text: row.text,
+    createdAt: row.created_at,
+  };
 }

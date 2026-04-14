@@ -3,16 +3,16 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
@@ -36,7 +36,25 @@ export default function LoginScreen() {
     });
     setLoading(false);
     if (error) {
-      Alert.alert("Login failed", error.message);
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        Alert.alert(
+          "Email not verified",
+          "Please check your inbox and confirm your email before logging in.",
+          [
+            {
+              text: "Resend email",
+              onPress: () =>
+                router.push({
+                  pathname: "/(auth)/verify-email",
+                  params: { email: email.trim() },
+                }),
+            },
+            { text: "OK", style: "cancel" },
+          ],
+        );
+      } else {
+        Alert.alert("Login failed", error.message);
+      }
     } else {
       router.replace("/(tabs)");
     }
@@ -61,7 +79,7 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo area */}
+          {/* Logo */}
           <View style={styles.logoArea}>
             <View style={styles.logoMark}>
               <View style={styles.logoLeft} />
@@ -70,16 +88,13 @@ export default function LoginScreen() {
             <Text style={styles.appName}>Acator</Text>
           </View>
 
-          {/* Form card */}
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>Sign in</Text>
 
-            {/* Email */}
             <Text style={styles.fieldLabel}>Username or Email</Text>
             <View style={styles.inputWrap}>
               <TextInput
                 style={styles.input}
-                placeholder=""
                 placeholderTextColor="rgba(255,255,255,0.4)"
                 value={email}
                 onChangeText={setEmail}
@@ -89,12 +104,10 @@ export default function LoginScreen() {
               />
             </View>
 
-            {/* Password */}
             <Text style={styles.fieldLabel}>Password</Text>
             <View style={styles.inputWrap}>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
-                placeholder=""
                 placeholderTextColor="rgba(255,255,255,0.4)"
                 value={password}
                 onChangeText={setPassword}
@@ -113,6 +126,14 @@ export default function LoginScreen() {
                 />
               </TouchableOpacity>
             </View>
+
+            {/* Forgot password */}
+            <TouchableOpacity
+              style={styles.forgotBtn}
+              onPress={() => router.push("/(auth)/forgot-password")}
+            >
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.dividerRow}>
@@ -140,7 +161,7 @@ export default function LoginScreen() {
               <Text style={styles.googleText}>Sign in with Google</Text>
             </TouchableOpacity>
 
-            {/* Login button */}
+            {/* Login */}
             <TouchableOpacity
               style={[styles.loginBtn, loading && { opacity: 0.7 }]}
               onPress={handleLogin}
@@ -169,8 +190,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.teal },
   scroll: { flexGrow: 1, paddingBottom: 40 },
-
-  // Logo
   logoArea: {
     flexDirection: "row",
     alignItems: "center",
@@ -201,8 +220,6 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "15deg" }],
   },
   appName: { fontSize: 30, fontWeight: "600", color: "#fff", letterSpacing: 1 },
-
-  // Form
   formCard: { paddingHorizontal: 28 },
   formTitle: {
     fontSize: 18,
@@ -226,13 +243,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     height: 48,
   },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: "#fff",
+  input: { flex: 1, fontSize: 15, color: "#fff" },
+  forgotBtn: { alignSelf: "flex-end", marginTop: -10, marginBottom: 20 },
+  forgotText: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.75)",
+    textDecorationLine: "underline",
   },
-
-  // Divider
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -245,8 +262,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.3)",
   },
   dividerText: { fontSize: 13, color: "rgba(255,255,255,0.6)" },
-
-  // Create account
   createAccountBtn: { alignItems: "center", marginVertical: 10 },
   createAccountText: {
     fontSize: 14,
@@ -254,8 +269,6 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     fontWeight: "500",
   },
-
-  // Google
   googleBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -278,8 +291,6 @@ const styles = StyleSheet.create({
   },
   googleG: { fontSize: 13, fontWeight: "700", color: "#4285F4" },
   googleText: { fontSize: 14, fontWeight: "500", color: "#fff" },
-
-  // Login
   loginBtn: {
     flexDirection: "row",
     alignItems: "center",

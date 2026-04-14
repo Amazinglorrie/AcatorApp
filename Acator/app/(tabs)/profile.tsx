@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   Alert,
@@ -13,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/theme";
 import { getProgress } from "../../constants/utils";
+import { supabase } from "../../lib/supabase";
 import { getProjects, getTasks, seedDataIfEmpty } from "../../store/storage";
 
 type RowIconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -25,6 +25,10 @@ interface MenuRow {
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userInitials, setUserInitials] = useState("");
   const [projectCount, setProjectCount] = useState(0);
   const [taskCount, setTaskCount] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
@@ -33,6 +37,25 @@ export default function ProfileScreen() {
   const [avgProgress, setAvgProgress] = useState(0);
 
   const load = useCallback(async () => {
+    // Load user info from Supabase session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session) {
+      const meta = session.user.user_metadata;
+      const name = meta?.full_name || meta?.name || "";
+      const email = session.user.email || "";
+      setUserName(name || email.split("@")[0]);
+      setUserEmail(email);
+      const parts = name.trim().split(" ");
+      setUserInitials(
+        parts.length >= 2
+          ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+          : name.slice(0, 2).toUpperCase() || "U",
+      );
+    }
+
+    // Load stats
     await seedDataIfEmpty();
     const [p, t] = await Promise.all([getProjects(), getTasks()]);
     setProjectCount(p.length);
@@ -58,22 +81,18 @@ export default function ProfileScreen() {
     }, [load]),
   );
 
-  const handleClearData = () => {
-    Alert.alert(
-      "Clear all data",
-      "This will delete all projects and tasks. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            await AsyncStorage.clear();
-            await load();
-          },
+  const handleSignOut = () => {
+    Alert.alert("Sign out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign out",
+        style: "destructive",
+        onPress: async () => {
+          await supabase.auth.signOut();
+          router.replace("/(auth)/login");
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const completion =
@@ -85,9 +104,9 @@ export default function ProfileScreen() {
     { icon: "color-palette-outline", label: "Appearance" },
     { icon: "help-circle-outline", label: "Help & feedback" },
     {
-      icon: "trash-outline",
-      label: "Clear all data",
-      onPress: handleClearData,
+      icon: "log-out-outline",
+      label: "Sign out",
+      onPress: handleSignOut,
       danger: true,
     },
   ];
@@ -100,14 +119,16 @@ export default function ProfileScreen() {
       >
         <Text style={styles.title}>Profile</Text>
 
+        {/* Avatar + user info from Supabase */}
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>S</Text>
+            <Text style={styles.avatarText}>{userInitials || "U"}</Text>
           </View>
-          <Text style={styles.name}>Student</Text>
-          <Text style={styles.sub}>StudyDesk user</Text>
+          <Text style={styles.name}>{userName || "User"}</Text>
+          <Text style={styles.sub}>{userEmail}</Text>
         </View>
 
+        {/* Stats */}
         <Text style={styles.sectionLabel}>Stats</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statTile}>
@@ -150,6 +171,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Menu */}
         <Text style={styles.sectionLabel}>App</Text>
         <View style={styles.menuCard}>
           {menuRows.map((row, i) => (
@@ -187,7 +209,9 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        <Text style={styles.version}>StudyDesk v1.0.0 · Built with Expo</Text>
+        <Text style={styles.version}>
+          Acator v1.0.0 · Built with Expo + Supabase
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -195,7 +219,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 16, paddingBottom: 48 },
+  content: { padding: 16, paddingBottom: 100 },
   title: {
     fontSize: 26,
     fontWeight: "500",
@@ -208,12 +232,12 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: Colors.badgeBg.blue,
+    backgroundColor: Colors.badgeBg.teal,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
   },
-  avatarText: { fontSize: 28, fontWeight: "500", color: Colors.badgeText.blue },
+  avatarText: { fontSize: 24, fontWeight: "500", color: Colors.badgeText.teal },
   name: { fontSize: 18, fontWeight: "500", color: Colors.textPrimary },
   sub: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   sectionLabel: {
@@ -251,12 +275,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 24,
   },
-  menuRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-  },
+  menuRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   menuRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
