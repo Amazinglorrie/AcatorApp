@@ -35,7 +35,7 @@ import {
 
 const STATUS_COLOR: Record<Project["status"], { bg: string; text: string }> = {
   "not-started": { bg: "#F1EFE8", text: "#444441" },
-  "in-progress": { bg: Colors.badgeBg.blue, text: Colors.badgeText.blue },
+  "in-progress": { bg: "#FFB300", text: "#fff" },
   completed: { bg: Colors.badgeBg.green, text: Colors.badgeText.green },
   overdue: { bg: Colors.badgeBg.red, text: Colors.badgeText.red },
 };
@@ -43,18 +43,18 @@ const STATUS_COLOR: Record<Project["status"], { bg: string; text: string }> = {
 const PRIORITY_OPTIONS = ["Low", "Medium", "High"] as const;
 type Priority = (typeof PRIORITY_OPTIONS)[number];
 
-const PRIORITY_STYLE: Record<Priority, { bg: string; text: string }> = {
-  Low: { bg: Colors.badgeBg.green, text: Colors.badgeText.green },
-  Medium: { bg: Colors.badgeBg.amber, text: Colors.badgeText.amber },
-  High: { bg: Colors.badgeBg.red, text: Colors.badgeText.red },
+const PRIORITY_COLOR: Record<Priority, string> = {
+  Low: Colors.success,
+  Medium: Colors.warning,
+  High: Colors.destructive,
 };
 
 const AVATAR_COLORS = [
-  { bg: Colors.badgeBg.blue, text: Colors.badgeText.blue },
-  { bg: Colors.badgeBg.teal, text: Colors.badgeText.teal },
-  { bg: Colors.badgeBg.amber, text: Colors.badgeText.amber },
-  { bg: Colors.badgeBg.purple, text: Colors.badgeText.purple },
-  { bg: Colors.badgeBg.red, text: Colors.badgeText.red },
+  { bg: "#E53935", text: "#fff" },
+  { bg: "#8E24AA", text: "#fff" },
+  { bg: "#1E88E5", text: "#fff" },
+  { bg: Colors.teal, text: "#fff" },
+  { bg: "#F4511E", text: "#fff" },
 ];
 
 function avatarColor(initials: string) {
@@ -82,7 +82,7 @@ export default function TaskDetailScreen() {
   const [newTaskName, setNewTaskName] = useState("");
   const [newComment, setNewComment] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "kanban">("overview");
-  const [priority, setPriority] = useState<Priority>("Medium");
+  const [priority, setPriority] = useState<Priority>("High");
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
 
   const load = useCallback(async () => {
@@ -147,7 +147,7 @@ export default function TaskDetailScreen() {
     await addComment(comment);
     setNewComment("");
     await load();
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
   };
 
   const handleDeleteProject = () => {
@@ -176,27 +176,21 @@ export default function TaskDetailScreen() {
   const barColor = colorBarFill[project.color];
   const pending = tasks.filter((t) => t.status === "pending");
   const completed = tasks.filter((t) => t.status === "done");
-  const priorityStyle = PRIORITY_STYLE[priority];
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* Header */}
+      {/* Teal header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {project.name}
-        </Text>
+        <View style={styles.headerSpacer} />
         <TouchableOpacity
           onPress={() => router.push(`/project/edit?id=${project.id}`)}
           hitSlop={10}
-          style={{ marginRight: 4 }}
+          style={styles.headerBtn}
         >
           <Ionicons name="create-outline" size={20} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleDeleteProject} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -243,58 +237,85 @@ export default function TaskDetailScreen() {
         >
           {activeTab === "overview" ? (
             <>
-              {/* Status + title */}
+              {/* Title + status badge */}
               <View style={styles.titleRow}>
                 <Text style={styles.projectName}>{project.name}</Text>
-                <View style={[styles.badge, { backgroundColor: bg }]}>
-                  <Text style={[styles.badgeText, { color: text }]}>
+                <View style={[styles.statusBadge, { backgroundColor: bg }]}>
+                  <Text style={[styles.statusBadgeText, { color: text }]}>
                     {STATUS_LABELS[project.status]}
                   </Text>
                 </View>
               </View>
               <Text style={styles.subject}>{project.subject}</Text>
 
-              {/* Info card */}
+              {/* Description card */}
               <View style={styles.card}>
-                <Text style={styles.cardSectionLabel}>Description</Text>
+                <View style={styles.cardTitleRow}>
+                  <Text style={styles.cardLabel}>Description</Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push(`/project/edit?id=${project.id}`)
+                    }
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name="create-outline"
+                      size={16}
+                      color={Colors.textTertiary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text style={styles.description}>
                   {project.description || "No description."}
                 </Text>
 
-                <View style={styles.metaGrid}>
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>Due date</Text>
-                    <Text
-                      style={[styles.metaValue, { color: Colors.destructive }]}
-                    >
-                      {formatDueDate(project.dueDate)}
-                    </Text>
+                {/* Assignee + Due date */}
+                <View style={styles.metaRow}>
+                  <View style={styles.metaCol}>
+                    <Text style={styles.metaLabel}>ASSIGNEE</Text>
+                    <View style={styles.assigneeRow}>
+                      <View
+                        style={[
+                          styles.assigneeAvatar,
+                          { backgroundColor: Colors.teal },
+                        ]}
+                      >
+                        <Text style={styles.assigneeAvatarText}>CH</Text>
+                      </View>
+                      <Text style={styles.assigneeName}>Cecilia H</Text>
+                    </View>
                   </View>
+                  <View style={styles.metaCol}>
+                    <Text style={styles.metaLabel}>DUE DATE:</Text>
+                    <View style={styles.dueDateRow}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={13}
+                        color={Colors.teal}
+                      />
+                      <Text style={styles.dueDateText}>
+                        {formatDueDate(project.dueDate)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
 
-                  {/* Priority pill */}
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>Priority</Text>
+                {/* Priority + Progress */}
+                <View style={styles.metaRow}>
+                  <View style={styles.metaCol}>
+                    <Text style={styles.metaLabel}>PRIORITY</Text>
                     <TouchableOpacity
-                      style={[
-                        styles.priorityPill,
-                        { backgroundColor: priorityStyle.bg },
-                      ]}
                       onPress={() => setShowPriorityPicker(!showPriorityPicker)}
                       activeOpacity={0.8}
                     >
                       <Text
                         style={[
-                          styles.priorityPillText,
-                          { color: priorityStyle.text },
+                          styles.priorityText,
+                          { color: PRIORITY_COLOR[priority] },
                         ]}
                       >
                         {priority}
                       </Text>
-                      <Ionicons
-                        name="chevron-down"
-                        size={12}
-                        color={priorityStyle.text}
-                      />
                     </TouchableOpacity>
                     {showPriorityPicker && (
                       <View style={styles.priorityDropdown}>
@@ -307,13 +328,14 @@ export default function TaskDetailScreen() {
                               setShowPriorityPicker(false);
                             }}
                           >
-                            <View
+                            <Text
                               style={[
-                                styles.priorityDot,
-                                { backgroundColor: PRIORITY_STYLE[p].text },
+                                styles.priorityOptionText,
+                                { color: PRIORITY_COLOR[p] },
                               ]}
-                            />
-                            <Text style={styles.priorityOptionText}>{p}</Text>
+                            >
+                              {p}
+                            </Text>
                             {p === priority && (
                               <Ionicons
                                 name="checkmark"
@@ -326,54 +348,64 @@ export default function TaskDetailScreen() {
                       </View>
                     )}
                   </View>
-
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>Tasks done</Text>
-                    <Text style={styles.metaValue}>
-                      {done}/{tasks.length}
+                  <View style={styles.metaCol}>
+                    <Text style={styles.metaLabel}>TASK PROGRESS (%):</Text>
+                    <Text style={[styles.priorityText, { color: Colors.teal }]}>
+                      {progress}%
                     </Text>
                   </View>
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>Progress</Text>
-                    <Text style={styles.metaValue}>{progress}%</Text>
-                  </View>
-                </View>
-
-                <View style={styles.progressBg}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${progress}%`, backgroundColor: barColor },
-                    ]}
-                  />
                 </View>
               </View>
 
-              {/* Tasks */}
-              <View style={styles.card}>
-                <View style={styles.taskHeader}>
-                  <Text style={styles.cardSectionLabel}>
-                    Tasks {done}/{tasks.length}
+              {/* Subtasks */}
+              <View style={styles.subtasksHeader}>
+                <Text style={styles.subtasksTitle}>
+                  Subtasks{" "}
+                  <Text style={styles.subtasksCount}>
+                    {done}/{tasks.length}
                   </Text>
-                </View>
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {}}
+                  style={styles.addSubtaskBtn}
+                >
+                  <Text style={styles.addSubtaskText}>+ Add subtask</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Progress bar */}
+              <View style={styles.progressBg}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${progress}%`, backgroundColor: barColor },
+                  ]}
+                />
+              </View>
+
+              {/* Task list */}
+              <View style={styles.taskList}>
                 {tasks.map((t) => (
-                  <View key={t.id} style={styles.taskRow}>
-                    <TouchableOpacity
+                  <TouchableOpacity
+                    key={t.id}
+                    style={styles.subtaskRow}
+                    onPress={() => handleToggle(t.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View
                       style={[
-                        styles.check,
-                        t.status === "done" && styles.checkDone,
+                        styles.subtaskCheck,
+                        t.status === "done" && styles.subtaskCheckDone,
                       ]}
-                      onPress={() => handleToggle(t.id)}
-                      hitSlop={8}
                     >
                       {t.status === "done" && (
                         <Ionicons name="checkmark" size={12} color="#fff" />
                       )}
-                    </TouchableOpacity>
+                    </View>
                     <Text
                       style={[
-                        styles.taskName,
-                        t.status === "done" && styles.taskNameDone,
+                        styles.subtaskName,
+                        t.status === "done" && styles.subtaskNameDone,
                       ]}
                       numberOfLines={1}
                     >
@@ -384,68 +416,63 @@ export default function TaskDetailScreen() {
                       hitSlop={8}
                     >
                       <Ionicons
-                        name="close"
-                        size={16}
+                        name="reorder-three-outline"
+                        size={18}
                         color={Colors.textTertiary}
                       />
                     </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 ))}
+
+                {/* Add task input */}
                 <View style={styles.addTaskRow}>
+                  <View style={styles.subtaskCheckEmpty} />
                   <TextInput
                     style={styles.addTaskInput}
-                    placeholder="Add a task…"
+                    placeholder="Add a subtask…"
                     placeholderTextColor={Colors.textTertiary}
                     value={newTaskName}
                     onChangeText={setNewTaskName}
                     onSubmitEditing={handleAddTask}
                     returnKeyType="done"
                   />
-                  <TouchableOpacity onPress={handleAddTask}>
-                    <Ionicons name="add-circle" size={24} color={Colors.teal} />
-                  </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Comments */}
-              <View style={styles.card}>
-                <Text style={styles.cardSectionLabel}>Comments</Text>
-                {comments.length === 0 && (
-                  <Text style={styles.noComments}>No comments yet.</Text>
-                )}
-                {comments.map((c) => {
-                  const av = avatarColor(c.initials);
-                  return (
-                    <View key={c.id} style={styles.commentRow}>
-                      <View
-                        style={[
-                          styles.commentAvatar,
-                          { backgroundColor: av.bg },
-                        ]}
-                      >
-                        <Text
-                          style={[styles.commentAvatarText, { color: av.text }]}
-                        >
-                          {c.initials}
-                        </Text>
-                      </View>
-                      <View style={styles.commentBubbleWrap}>
-                        <Text style={styles.commentAuthor}>{c.author}</Text>
-                        <View style={styles.commentBubble}>
-                          <Text style={styles.commentText}>{c.text}</Text>
-                        </View>
-                      </View>
-                      <Text style={styles.commentTime}>
-                        {formatCommentTime(c.createdAt)}
-                      </Text>
+              {/* Comments section */}
+              <Text style={styles.commentsTitle}>Comments</Text>
+              {comments.length > 0 && (
+                <Text style={styles.commentsTime}>
+                  Today at {formatCommentTime(comments[0].createdAt)}
+                </Text>
+              )}
+
+              {comments.map((c) => {
+                const av = avatarColor(c.initials);
+                return (
+                  <View key={c.id} style={styles.commentRow}>
+                    <View
+                      style={[styles.commentAvatar, { backgroundColor: av.bg }]}
+                    >
+                      <Text style={styles.commentAvatarText}>{c.initials}</Text>
                     </View>
-                  );
-                })}
-              </View>
+                    <View style={styles.commentBody}>
+                      <Text style={styles.commentAuthor}>{c.author}</Text>
+                      <Text style={styles.commentText}>{c.text}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+
+              {comments.length === 0 && (
+                <Text style={styles.noComments}>
+                  No comments yet. Start the conversation!
+                </Text>
+              )}
             </>
           ) : (
             <>
-              {/* Kanban — Pending column */}
+              {/* Kanban pending */}
               <View style={styles.kanbanCol}>
                 <View
                   style={[
@@ -479,7 +506,7 @@ export default function TaskDetailScreen() {
                 ))}
               </View>
 
-              {/* Kanban — Done column */}
+              {/* Kanban done */}
               <View style={styles.kanbanCol}>
                 <View
                   style={[
@@ -528,27 +555,17 @@ export default function TaskDetailScreen() {
           )}
         </ScrollView>
 
-        {/* Comment input bar — overview only */}
+        {/* Comment input bar */}
         {activeTab === "overview" && (
           <View style={styles.commentInputBar}>
             <View
-              style={[
-                styles.commentAvatar,
-                { backgroundColor: Colors.badgeBg.teal },
-              ]}
+              style={[styles.commentAvatar, { backgroundColor: Colors.teal }]}
             >
-              <Text
-                style={[
-                  styles.commentAvatarText,
-                  { color: Colors.badgeText.teal },
-                ]}
-              >
-                YO
-              </Text>
+              <Text style={styles.commentAvatarText}>SJ</Text>
             </View>
             <TextInput
               style={styles.commentInput}
-              placeholder="Add a comment…"
+              placeholder="Add a comment..."
               placeholderTextColor={Colors.textTertiary}
               value={newComment}
               onChangeText={setNewComment}
@@ -570,15 +587,17 @@ export default function TaskDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.teal },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: Colors.teal,
   },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: "500", color: "#fff" },
+  headerSpacer: { flex: 1 },
+  headerBtn: { marginLeft: 12 },
+
   tabRow: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -592,9 +611,11 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: Colors.teal },
   tabText: { fontSize: 13, fontWeight: "500", color: Colors.textSecondary },
   tabTextActive: { color: "#fff" },
-  scroll: { flex: 1, backgroundColor: Colors.background },
+
+  scroll: { flex: 1, backgroundColor: "#EBF5F0" },
   content: { padding: 16, paddingBottom: 24 },
 
+  // Title
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -603,28 +624,35 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   projectName: {
-    fontSize: 20,
-    fontWeight: "500",
+    fontSize: 22,
+    fontWeight: "700",
     color: Colors.textPrimary,
     flex: 1,
+    letterSpacing: -0.3,
   },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
-  badgeText: { fontSize: 11, fontWeight: "500" },
-  subject: { fontSize: 12, color: Colors.textSecondary, marginBottom: 12 },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99 },
+  statusBadgeText: { fontSize: 12, fontWeight: "600" },
+  subject: { fontSize: 12, color: Colors.textSecondary, marginBottom: 14 },
 
+  // Description card
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 14,
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  cardSectionLabel: {
+  cardTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  cardLabel: {
     fontSize: 11,
-    fontWeight: "500",
     color: Colors.textTertiary,
+    fontWeight: "500",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 6,
   },
   description: {
     fontSize: 13,
@@ -632,81 +660,94 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginBottom: 14,
   },
-  metaGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 12,
-  },
-  metaItem: { width: "45%" },
-  metaLabel: {
-    fontSize: 11,
-    color: Colors.textTertiary,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-    marginBottom: 4,
-  },
-  metaValue: { fontSize: 13, fontWeight: "500", color: Colors.textPrimary },
 
-  priorityPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 99,
+  metaRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
+  metaCol: { flex: 1 },
+  metaLabel: {
+    fontSize: 10,
+    color: Colors.textTertiary,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 5,
   },
-  priorityPillText: { fontSize: 12, fontWeight: "500" },
+
+  assigneeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  assigneeAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  assigneeAvatarText: { fontSize: 10, fontWeight: "600", color: "#fff" },
+  assigneeName: { fontSize: 13, fontWeight: "500", color: Colors.textPrimary },
+
+  dueDateRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  dueDateText: { fontSize: 13, fontWeight: "500", color: Colors.teal },
+
+  priorityText: { fontSize: 13, fontWeight: "600" },
   priorityDropdown: {
     position: "absolute",
-    top: 30,
+    top: 24,
     left: 0,
     zIndex: 99,
-    backgroundColor: Colors.card,
+    backgroundColor: "#fff",
     borderRadius: 10,
     borderWidth: 0.5,
     borderColor: Colors.separator,
-    width: 130,
+    width: 110,
     overflow: "hidden",
   },
   priorityOption: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
   },
-  priorityDot: { width: 8, height: 8, borderRadius: 4 },
-  priorityOptionText: { flex: 1, fontSize: 13, color: Colors.textPrimary },
+  priorityOptionText: { fontSize: 13, fontWeight: "500" },
 
-  progressBg: {
-    height: 4,
-    backgroundColor: "#E5E5EA",
-    borderRadius: 99,
-    overflow: "hidden",
-  },
-  progressFill: { height: "100%", borderRadius: 99 },
-
-  taskHeader: {
+  // Subtasks
+  subtasksHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
-  taskRow: {
+  subtasksTitle: { fontSize: 15, fontWeight: "600", color: Colors.textPrimary },
+  subtasksCount: { color: Colors.textTertiary, fontWeight: "400" },
+  addSubtaskBtn: {},
+  addSubtaskText: { fontSize: 13, color: Colors.teal, fontWeight: "500" },
+
+  progressBg: {
+    height: 6,
+    backgroundColor: "#D0EAE0",
+    borderRadius: 99,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  progressFill: { height: "100%", borderRadius: 99 },
+
+  taskList: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    marginBottom: 24,
+  },
+  subtaskRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingVertical: 9,
+    gap: 12,
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.separator,
+    borderBottomColor: "#f0f0f0",
   },
-  check: {
-    width: 18,
-    height: 18,
+  subtaskCheck: {
+    width: 20,
+    height: 20,
     borderRadius: 4,
     borderWidth: 1.5,
     borderColor: "#C7C7CC",
@@ -714,66 +755,50 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  checkDone: { backgroundColor: Colors.teal, borderColor: Colors.teal },
-  taskName: { flex: 1, fontSize: 13, color: Colors.textPrimary },
-  taskNameDone: {
+  subtaskCheckDone: { backgroundColor: Colors.teal, borderColor: Colors.teal },
+  subtaskCheckEmpty: { width: 20, height: 20, flexShrink: 0 },
+  subtaskName: { flex: 1, fontSize: 14, color: Colors.textPrimary },
+  subtaskNameDone: {
     textDecorationLine: "line-through",
     color: Colors.textTertiary,
   },
   addTaskRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 10,
+    gap: 12,
+    paddingVertical: 10,
   },
-  addTaskInput: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.textPrimary,
-    borderWidth: 0.5,
-    borderColor: Colors.separator,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: Colors.background,
-  },
+  addTaskInput: { flex: 1, fontSize: 14, color: Colors.textPrimary },
 
-  noComments: { fontSize: 13, color: Colors.textTertiary, paddingVertical: 4 },
-  commentRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 12,
+  // Comments
+  commentsTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 4,
   },
+  commentsTime: { fontSize: 11, color: Colors.textTertiary, marginBottom: 12 },
+  commentRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
   commentAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  commentAvatarText: { fontSize: 11, fontWeight: "500" },
-  commentBubbleWrap: { flex: 1 },
+  commentAvatarText: { fontSize: 12, fontWeight: "600", color: "#fff" },
+  commentBody: { flex: 1 },
   commentAuthor: {
-    fontSize: 11,
-    fontWeight: "500",
-    color: Colors.textSecondary,
-    marginBottom: 3,
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 2,
   },
-  commentBubble: {
-    backgroundColor: Colors.background,
-    borderRadius: 10,
-    padding: 8,
-  },
-  commentText: { fontSize: 13, color: Colors.textPrimary, lineHeight: 18 },
-  commentTime: {
-    fontSize: 10,
-    color: Colors.textTertiary,
-    marginTop: 18,
-    flexShrink: 0,
-  },
+  commentText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
+  noComments: { fontSize: 13, color: Colors.textTertiary, paddingVertical: 8 },
 
+  // Comment input
   commentInputBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -804,6 +829,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  // Kanban
   kanbanCol: { marginBottom: 14 },
   kanbanHeader: {
     flexDirection: "row",
@@ -816,7 +842,7 @@ const styles = StyleSheet.create({
   },
   kanbanHeaderText: { fontSize: 13, fontWeight: "500", color: "#fff" },
   kanbanCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
     marginBottom: 6,
