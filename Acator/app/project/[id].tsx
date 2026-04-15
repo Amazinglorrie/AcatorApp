@@ -626,11 +626,12 @@ const styles = StyleSheet.create({
   kanbanOuter: { flex: 1, backgroundColor: "#EBF5F0" },
   kanbanContent: {
     padding: 16,
-    gap: 12,
+    gap: 16,
     alignItems: "flex-start",
     paddingBottom: 100,
   },
-  kanbanCol: { width: 220 },
+  kanbanCol: { width: 240, minHeight: 400, marginRight: 12, flexShrink: 0
+  },
   kanbanColHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -641,12 +642,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   kanbanColTitle: { fontSize: 15, fontWeight: "600", color: "#fff" },
-  kanbanCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
+kanbanCard: {
+  backgroundColor: "#fff",
+  borderRadius: 14,
+  padding: 12,
+  marginBottom: 10,
+  shadowColor: "#000",
+  shadowOpacity: 0.06,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 3 },
+},
   kanbanTaskName: {
     fontSize: 13,
     fontWeight: "500",
@@ -702,21 +707,32 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   projectName: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    flex: 1,
-    letterSpacing: -0.3,
+  fontSize: 26, // was 22
+  fontWeight: "800", // stronger
+  letterSpacing: -0.5,
+},
+
+subject: {
+  fontSize: 13,
+  opacity: 0.7, // softer instead of same color weight
+},
+  statusBadge: { 
+    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99 
+
   },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99 },
-  statusBadgeText: { fontSize: 12, fontWeight: "600" },
-  subject: { fontSize: 12, color: Colors.textSecondary, marginBottom: 14 },
+  statusBadgeText: { fontSize: 12, fontWeight: "600" 
+  },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 20,
-  },
+  backgroundColor: "#fff",
+  borderRadius: 18,
+  padding: 16,
+  marginBottom: 20,
+  shadowColor: "#000",
+  shadowOpacity: 0.05,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 3,
+},
   cardTitleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -790,20 +806,17 @@ const styles = StyleSheet.create({
   subtasksTitle: { fontSize: 15, fontWeight: "600", color: Colors.textPrimary },
   subtasksCount: { color: Colors.textTertiary, fontWeight: "400" },
   addSubtaskText: { fontSize: 13, color: Colors.teal, fontWeight: "500" },
-  progressBg: {
-    height: 6,
-    backgroundColor: "#D0EAE0",
-    borderRadius: 99,
-    marginBottom: 12,
-    overflow: "hidden",
-  },
-  progressFill: { height: "100%", borderRadius: 99 },
-  taskList: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    marginBottom: 24,
-  },
+progressBg: {
+  height: 8, // was 6
+  backgroundColor: "#D0EAE0",
+  borderRadius: 99,
+  overflow: "hidden",
+},
+
+progressFill: {
+  height: "100%",
+  borderRadius: 99,
+},
   subtaskRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -813,16 +826,19 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f0f0f0",
   },
   subtaskCheck: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1.5,
+    width: 22,
+    height: 22,
+    borderRadius: 11, // circle instead of square
+    borderWidth: 2,
     borderColor: "#C7C7CC",
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
   },
-  subtaskCheckDone: { backgroundColor: Colors.teal, borderColor: Colors.teal },
+
+  subtaskCheckDone: {
+    backgroundColor: Colors.teal,
+    borderColor: Colors.teal,
+  },
   subtaskCheckEmpty: { width: 20, height: 20, flexShrink: 0 },
   subtaskName: { flex: 1, fontSize: 14, color: Colors.textPrimary },
   subtaskNameDone: {
@@ -853,7 +869,17 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   commentAvatarText: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  commentBody: { flex: 1 },
+  commentBody: {
+  flex: 1,
+  backgroundColor: "#fff",
+  padding: 10,
+  borderRadius: 12,
+
+  shadowColor: "#000",
+  shadowOpacity: 0.04,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 2 },
+},
   commentAuthor: {
     fontSize: 13,
     fontWeight: "600",
