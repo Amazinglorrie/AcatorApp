@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "../../constants/theme";
+import { Colors, theme } from "../../constants/theme";
 import { getProgress } from "../../constants/utils";
 import { supabase } from "../../lib/supabase";
 import { getProjects, getTasks, seedDataIfEmpty } from "../../store/storage";
@@ -37,7 +37,6 @@ export default function ProfileScreen() {
   const [avgProgress, setAvgProgress] = useState(0);
 
   const load = useCallback(async () => {
-    // Load user info from Supabase session
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -55,7 +54,6 @@ export default function ProfileScreen() {
       );
     }
 
-    // Load stats
     await seedDataIfEmpty();
     const [p, t] = await Promise.all([getProjects(), getTasks()]);
     setProjectCount(p.length);
@@ -119,7 +117,7 @@ export default function ProfileScreen() {
       >
         <Text style={styles.title}>Profile</Text>
 
-        {/* Avatar + user info from Supabase */}
+        {/* ── Avatar + user info ── */}
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{userInitials || "U"}</Text>
@@ -128,7 +126,7 @@ export default function ProfileScreen() {
           <Text style={styles.sub}>{userEmail}</Text>
         </View>
 
-        {/* Stats */}
+        {/* ── Stats ── */}
         <Text style={styles.sectionLabel}>Stats</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statTile}>
@@ -146,7 +144,7 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Completion</Text>
           </View>
           <View style={styles.statTile}>
-            <Text style={[styles.statVal, { color: Colors.teal }]}>
+            <Text style={[styles.statVal, { color: theme.colors.primary }]}>
               {completedCount}
             </Text>
             <Text style={styles.statLabel}>Done</Text>
@@ -171,7 +169,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Menu */}
+        {/* ── Menu ── */}
         <Text style={styles.sectionLabel}>App</Text>
         <View style={styles.menuCard}>
           {menuRows.map((row, i) => (
@@ -190,7 +188,7 @@ export default function ProfileScreen() {
                 <Ionicons
                   name={row.icon}
                   size={17}
-                  color={row.danger ? Colors.destructive : Colors.teal}
+                  color={row.danger ? Colors.destructive : theme.colors.primary}
                 />
               </View>
               <Text
@@ -258,7 +256,7 @@ const styles = StyleSheet.create({
   statTile: {
     flex: 1,
     minWidth: "30%",
-    backgroundColor: Colors.card,
+    backgroundColor: theme.colors.card,
     borderRadius: 14,
     padding: 14,
   },
@@ -270,7 +268,7 @@ const styles = StyleSheet.create({
   },
   statLabel: { fontSize: 12, color: Colors.textSecondary },
   menuCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: theme.colors.card,
     borderRadius: 14,
     overflow: "hidden",
     marginBottom: 24,

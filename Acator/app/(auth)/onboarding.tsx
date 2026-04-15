@@ -3,15 +3,15 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Colors } from "../../constants/theme";
+import { theme } from "../../constants/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -21,7 +21,7 @@ const SLIDES = [
     icon: "albums-outline" as const,
     title: "Organize",
     body: "Stay on top of every project, deadline, and task — all in one beautiful place.",
-    bg: Colors.teal,
+    bg: theme.colors.primary,        // #1D9E75
   },
   {
     id: "2",
@@ -59,12 +59,12 @@ export default function OnboardingScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Skip */}
+      {/* ── Skip ── */}
       <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
 
-      {/* Slides */}
+      {/* ── Slides ── */}
       <Animated.FlatList
         ref={flatRef}
         data={SLIDES}
@@ -83,7 +83,7 @@ export default function OnboardingScreen() {
         renderItem={({ item }) => (
           <View style={[styles.slide, { backgroundColor: item.bg }]}>
             <View style={styles.iconCircle}>
-              <Ionicons name={item.icon} size={64} color="#fff" />
+              <Ionicons name={item.icon} size={64} color={theme.colors.textOnTeal} />
             </View>
             <Text style={styles.slideTitle}>{item.title}</Text>
             <Text style={styles.slideBody}>{item.body}</Text>
@@ -91,10 +91,8 @@ export default function OnboardingScreen() {
         )}
       />
 
-      {/* Dots + Next */}
-      <View
-        style={[styles.footer, { backgroundColor: SLIDES[activeIndex].bg }]}
-      >
+      {/* ── Footer: dots + next button ── */}
+      <View style={[styles.footer, { backgroundColor: SLIDES[activeIndex].bg }]}>
         <View style={styles.dots}>
           {SLIDES.map((_, i) => {
             const opacity = scrollX.interpolate({
@@ -117,28 +115,38 @@ export default function OnboardingScreen() {
         </View>
 
         <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          {activeIndex < SLIDES.length - 1 ? (
-            <>
-              <Text style={styles.nextBtnText}>Next</Text>
-              <Ionicons name="chevron-forward" size={18} color={Colors.teal} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.nextBtnText}>Get Started</Text>
-              <Ionicons name="chevron-forward" size={18} color={Colors.teal} />
-            </>
-          )}
+          <Text style={styles.nextBtnText}>
+            {activeIndex < SLIDES.length - 1 ? "Next" : "Get Started"}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.teal },
-  skipBtn: { position: "absolute", top: 56, right: 24, zIndex: 10 },
-  skipText: { fontSize: 14, color: "rgba(255,255,255,0.7)", fontWeight: "500" },
+// ── Styles ────────────────────────────────────────────────────────────────────
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+  },
+
+  // ── Skip ──
+  skipBtn: {
+    position: "absolute",
+    top: 56,
+    right: 24,
+    zIndex: 10,
+  },
+  skipText: {
+    ...theme.typography.link,
+    color: theme.colors.textOnTealFaint,
+    fontWeight: "500",
+  },
+
+  // ── Slide ──
   slide: {
     width,
     flex: 1,
@@ -152,7 +160,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: theme.icon.circleBg,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
@@ -160,17 +168,18 @@ const styles = StyleSheet.create({
   slideTitle: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
     textAlign: "center",
     letterSpacing: -0.5,
   },
   slideBody: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: theme.colors.textOnTealMuted,
     textAlign: "center",
     lineHeight: 24,
   },
 
+  // ── Footer ──
   footer: {
     position: "absolute",
     bottom: 0,
@@ -183,7 +192,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  dots: { flexDirection: "row", alignItems: "center", gap: 6 },
+  dots: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   dot: {
     width: 8,
     height: 8,
@@ -194,10 +207,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 99,
   },
-  nextBtnText: { fontSize: 14, fontWeight: "600", color: Colors.teal },
+  nextBtnText: {
+    ...theme.typography.link,
+    fontWeight: "600",
+    color: theme.colors.primary,
+  },
 });

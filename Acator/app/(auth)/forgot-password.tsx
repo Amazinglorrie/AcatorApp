@@ -3,17 +3,17 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Colors } from "../../constants/theme";
+import { theme } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
 
 export default function ForgotPasswordScreen() {
@@ -56,12 +56,20 @@ export default function ForgotPasswordScreen() {
             onPress={() => router.back()}
             hitSlop={10}
           >
-            <Ionicons name="chevron-back" size={24} color="#fff" />
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={theme.colors.textOnTeal}
+            />
           </TouchableOpacity>
 
           {/* Icon */}
           <View style={styles.iconCircle}>
-            <Ionicons name="lock-open-outline" size={40} color="#fff" />
+            <Ionicons
+              name="lock-open-outline"
+              size={40}
+              color={theme.colors.textOnTeal}
+            />
           </View>
 
           <Text style={styles.title}>Forgot password?</Text>
@@ -71,7 +79,11 @@ export default function ForgotPasswordScreen() {
 
           {sent ? (
             <View style={styles.sentCard}>
-              <Ionicons name="checkmark-circle" size={40} color={Colors.teal} />
+              <Ionicons
+                name="checkmark-circle"
+                size={40}
+                color={theme.colors.success}
+              />
               <Text style={styles.sentTitle}>Email sent!</Text>
               <Text style={styles.sentBody}>
                 Check your inbox for a password reset link. It may take a minute
@@ -96,7 +108,7 @@ export default function ForgotPasswordScreen() {
                   keyboardType="email-address"
                   returnKeyType="send"
                   onSubmitEditing={handleReset}
-                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  placeholderTextColor={theme.colors.placeholderOnTeal}
                 />
               </View>
 
@@ -106,7 +118,7 @@ export default function ForgotPasswordScreen() {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color={Colors.teal} />
+                  <ActivityIndicator color={theme.colors.primary} />
                 ) : (
                   <Text style={styles.resetBtnText}>Send reset link</Text>
                 )}
@@ -127,91 +139,110 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.teal },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+  },
   inner: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: theme.spacing.screen,
     paddingTop: 80,
     alignItems: "center",
   },
-  backBtn: { position: "absolute", top: 52, left: 0 },
+  backBtn: {
+    position: "absolute",
+    top: 52,
+    left: 0,
+  },
   iconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    width: theme.icon.circleSize,
+    height: theme.icon.circleSize,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.icon.circleBg,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#fff",
+    ...theme.typography.title,
+    color: theme.colors.textOnTeal,
     marginBottom: 10,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 15,
-    color: "rgba(255,255,255,0.75)",
+    ...theme.typography.subtitle,
+    color: theme.colors.textOnTealMuted,
     textAlign: "center",
-    lineHeight: 22,
     marginBottom: 32,
   },
   fieldLabel: {
     alignSelf: "flex-start",
-    fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
+    ...theme.typography.label,
+    color: theme.colors.textOnTealMuted,
     marginBottom: 8,
   },
   inputWrap: {
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 10,
+    backgroundColor: theme.colors.overlay,
+    borderRadius: theme.radius.input,
     paddingHorizontal: 14,
-    height: 48,
-    marginBottom: 16,
+    height: theme.spacing.inputH,
+    marginBottom: theme.spacing.gap,
   },
-  input: { flex: 1, fontSize: 15, color: "#fff" },
+  input: {
+    flex: 1,
+    ...theme.typography.subtitle,
+    color: theme.colors.textOnTeal,
+  },
   resetBtn: {
     width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingVertical: 14,
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: theme.spacing.gap,
   },
-  resetBtnText: { fontSize: 15, fontWeight: "600", color: Colors.teal },
-  cancelLink: { marginTop: 8 },
+  resetBtnText: {
+    ...theme.typography.button,
+    color: theme.colors.primary,
+  },
+  cancelLink: {
+    marginTop: 8,
+  },
   cancelLinkText: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.7)",
+    ...theme.typography.link,
+    color: theme.colors.textOnTealFaint,
     textDecorationLine: "underline",
   },
   sentCard: {
     width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card,
+    padding: theme.spacing.card,
     alignItems: "center",
-    gap: 12,
+    gap: theme.spacing.gap,
   },
-  sentTitle: { fontSize: 20, fontWeight: "700", color: Colors.textPrimary },
+  sentTitle: {
+    ...theme.typography.title,
+    color: theme.colors.text,
+  },
   sentBody: {
-    fontSize: 14,
-    color: Colors.textSecondary,
+    ...theme.typography.body,
+    color: theme.colors.muted,
     textAlign: "center",
-    lineHeight: 20,
   },
   backToLoginBtn: {
     marginTop: 8,
-    backgroundColor: Colors.teal,
-    borderRadius: 10,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.input,
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
-  backToLoginText: { fontSize: 14, fontWeight: "600", color: "#fff" },
+  backToLoginText: {
+    ...theme.typography.body,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+  },
 });

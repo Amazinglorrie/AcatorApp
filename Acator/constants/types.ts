@@ -10,7 +10,7 @@ export interface Task {
   id: string;
   projectId: string;
   name: string;
-  dueDate: string; // ISO date string YYYY-MM-DD
+  dueDate: string; 
   status: TaskStatus;
   createdAt: string;
 }
@@ -20,7 +20,7 @@ export interface Project {
   name: string;
   subject: string;
   description: string;
-  dueDate: string; // ISO date string YYYY-MM-DD
+  dueDate: string; 
   status: ProjectStatus;
   color: ProjectColor;
   createdAt: string;

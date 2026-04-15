@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { Colors } from "../../constants/theme";
+import { theme } from "../../constants/theme";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -20,7 +20,11 @@ function TabIcon({
     return (
       <View style={styles.activeWrap}>
         <View style={styles.activeBubble}>
-          <Ionicons name={activeName} size={22} color="#fff" />
+          <Ionicons
+            name={activeName}
+            size={22}
+            color={theme.colors.textOnTeal}
+          />
         </View>
         <Text style={styles.activeLabel} numberOfLines={1}>
           {label}
@@ -30,7 +34,7 @@ function TabIcon({
   }
   return (
     <View style={styles.inactiveWrap}>
-      <Ionicons name={name} size={22} color="rgba(255,255,255,0.7)" />
+      <Ionicons name={name} size={22} color={theme.colors.textOnTealFaint} />
     </View>
   );
 }
@@ -101,11 +105,13 @@ export default function TabsLayout() {
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const BAR_HEIGHT = 64;
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     borderTopWidth: 0,
     borderRadius: 36,
     marginHorizontal: 16,
@@ -138,16 +144,16 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     borderWidth: 3,
-    borderColor: "#fff",
+    borderColor: theme.colors.card,
     alignItems: "center",
     justifyContent: "center",
   },
   activeLabel: {
     fontSize: 10,
     fontWeight: "500",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
   },
   inactiveWrap: {
     flex: 1,

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Colors } from "../constants/theme";
+import { Colors, theme } from "../constants/theme";
 
 interface Props {
   visible: boolean;
@@ -86,7 +86,6 @@ export default function DatePickerModal({
     ...Array(firstDay).fill(null),
     ...Array.from({ length: totalDays }, (_, i) => i + 1),
   ];
-  // pad to complete last row
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
@@ -98,7 +97,7 @@ export default function DatePickerModal({
     >
       <View style={styles.overlay}>
         <View style={styles.sheet}>
-          {/* Month nav */}
+          {/* ── Month nav ── */}
           <View style={styles.nav}>
             <TouchableOpacity onPress={prevMonth} hitSlop={10}>
               <Ionicons
@@ -119,7 +118,7 @@ export default function DatePickerModal({
             </TouchableOpacity>
           </View>
 
-          {/* Day headers */}
+          {/* ── Day headers ── */}
           <View style={styles.dayHeaders}>
             {DAYS.map((d) => (
               <Text key={d} style={styles.dayHeader}>
@@ -128,7 +127,7 @@ export default function DatePickerModal({
             ))}
           </View>
 
-          {/* Calendar grid */}
+          {/* ── Calendar grid ── */}
           <View style={styles.grid}>
             {cells.map((day, i) => (
               <TouchableOpacity
@@ -156,7 +155,7 @@ export default function DatePickerModal({
             ))}
           </View>
 
-          {/* Actions */}
+          {/* ── Actions ── */}
           <View style={styles.actions}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
               <Text style={styles.cancelText}>Cancel</Text>
@@ -188,8 +187,8 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   sheet: {
-    backgroundColor: Colors.card,
-    borderRadius: 20,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card,
     padding: 20,
     width: "100%",
     maxWidth: 340,
@@ -217,16 +216,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: CELL / 2,
   },
-  cellSelected: { backgroundColor: Colors.teal },
-  cellToday: { borderWidth: 1.5, borderColor: Colors.teal },
+  cellSelected: { backgroundColor: theme.colors.primary },
+  cellToday: { borderWidth: 1.5, borderColor: theme.colors.primary },
   cellText: { fontSize: 14, color: Colors.textPrimary },
-  cellTextSelected: { color: "#fff", fontWeight: "500" },
-  cellTextToday: { color: Colors.teal, fontWeight: "500" },
+  cellTextSelected: { color: theme.colors.textOnTeal, fontWeight: "500" },
+  cellTextToday: { color: theme.colors.primary, fontWeight: "500" },
   actions: { flexDirection: "row", gap: 10, marginTop: 16 },
   cancelBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: theme.radius.input,
     backgroundColor: Colors.background,
     alignItems: "center",
   },
@@ -234,10 +233,14 @@ const styles = StyleSheet.create({
   confirmBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: Colors.teal,
+    borderRadius: theme.radius.input,
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
   },
   confirmBtnDisabled: { backgroundColor: Colors.textTertiary },
-  confirmText: { fontSize: 14, fontWeight: "500", color: "#fff" },
+  confirmText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: theme.colors.textOnTeal,
+  },
 });

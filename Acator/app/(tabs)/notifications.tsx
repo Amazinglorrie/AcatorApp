@@ -3,7 +3,7 @@ import { useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "../../constants/theme";
+import { Colors, theme } from "../../constants/theme";
 import { formatDueDate, getDueVariant } from "../../constants/utils";
 import { getProjects, getTasks } from "../../store/storage";
 
@@ -24,7 +24,6 @@ export default function NotificationsScreen() {
     const [projects, tasks] = await Promise.all([getProjects(), getTasks()]);
     const notifs: NotifItem[] = [];
 
-    // Overdue projects
     projects
       .filter((p) => p.status === "overdue")
       .forEach((p) => {
@@ -39,7 +38,6 @@ export default function NotificationsScreen() {
         });
       });
 
-    // Tasks due soon
     tasks
       .filter(
         (t) => t.status === "pending" && getDueVariant(t.dueDate) === "soon",
@@ -56,7 +54,6 @@ export default function NotificationsScreen() {
         });
       });
 
-    // Completed projects
     projects
       .filter((p) => p.status === "completed")
       .forEach((p) => {
@@ -125,16 +122,20 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
   },
-  headerTitle: { fontSize: 18, fontWeight: "500", color: "#fff" },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "500",
+    color: theme.colors.textOnTeal,
+  },
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
   emptyWrap: { alignItems: "center", marginTop: 80, gap: 8 },
   emptyTitle: { fontSize: 16, fontWeight: "500", color: Colors.textSecondary },
   emptyBody: { fontSize: 13, color: Colors.textTertiary },
   row: {
-    backgroundColor: Colors.card,
+    backgroundColor: theme.colors.card,
     borderRadius: 14,
     padding: 12,
     marginBottom: 8,

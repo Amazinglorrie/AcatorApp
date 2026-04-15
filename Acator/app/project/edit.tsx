@@ -2,21 +2,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DatePickerModal from "../../components/DatePickerModal";
 import {
-    Colors,
-    PROJECT_COLORS,
-    PROJECT_SUBJECTS,
-    colorBarFill,
+  Colors,
+  PROJECT_COLORS,
+  PROJECT_SUBJECTS,
+  colorBarFill,
+  theme,
 } from "../../constants/theme";
 import { Project, ProjectColor } from "../../constants/types";
 import { formatDueDate } from "../../constants/utils";
@@ -89,9 +90,14 @@ export default function EditProjectScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={theme.colors.textOnTeal}
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Project</Text>
         <TouchableOpacity onPress={handleSave} hitSlop={10}>
@@ -173,7 +179,11 @@ export default function EditProjectScreen() {
                   {s}
                 </Text>
                 {s === subject && (
-                  <Ionicons name="checkmark" size={16} color={Colors.teal} />
+                  <Ionicons
+                    name="checkmark"
+                    size={16}
+                    color={theme.colors.primary}
+                  />
                 )}
               </TouchableOpacity>
             ))}
@@ -212,7 +222,11 @@ export default function EditProjectScreen() {
                   {s.label}
                 </Text>
                 {s.value === status && (
-                  <Ionicons name="checkmark" size={16} color={Colors.teal} />
+                  <Ionicons
+                    name="checkmark"
+                    size={16}
+                    color={theme.colors.primary}
+                  />
                 )}
               </TouchableOpacity>
             ))}
@@ -232,7 +246,11 @@ export default function EditProjectScreen() {
               onPress={() => setColor(c)}
             >
               {c === color && (
-                <Ionicons name="checkmark" size={14} color="#fff" />
+                <Ionicons
+                  name="checkmark"
+                  size={14}
+                  color={theme.colors.textOnTeal}
+                />
               )}
             </TouchableOpacity>
           ))}
@@ -257,17 +275,22 @@ export default function EditProjectScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.teal },
+  safe: { flex: 1, backgroundColor: theme.colors.primary },
   header: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
   },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: "500", color: "#fff" },
-  saveBtn: { fontSize: 15, fontWeight: "500", color: "#fff" },
+  headerTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "500",
+    color: theme.colors.textOnTeal,
+  },
+  saveBtn: { fontSize: 15, fontWeight: "500", color: theme.colors.textOnTeal },
   scroll: { flex: 1, backgroundColor: Colors.background },
   content: { padding: 16, paddingBottom: 40 },
   label: {
@@ -277,8 +300,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
@@ -289,8 +312,8 @@ const styles = StyleSheet.create({
   },
   textarea: { minHeight: 72, paddingTop: 10 },
   pickerBtn: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: "row",
@@ -302,8 +325,8 @@ const styles = StyleSheet.create({
   },
   pickerBtnText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
   pickerList: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     borderWidth: 0.5,
     borderColor: Colors.separator,
     marginBottom: 14,
@@ -319,7 +342,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.separator,
   },
   pickerItemText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
-  pickerItemTextActive: { color: Colors.teal, fontWeight: "500" },
+  pickerItemTextActive: { color: theme.colors.primary, fontWeight: "500" },
   colorRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
   colorSwatch: {
     width: 34,
@@ -330,10 +353,14 @@ const styles = StyleSheet.create({
   },
   colorSwatchActive: { borderWidth: 2.5, borderColor: Colors.textPrimary },
   saveFullBtn: {
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
   },
-  saveFullBtnText: { fontSize: 15, fontWeight: "500", color: "#fff" },
+  saveFullBtnText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: theme.colors.textOnTeal,
+  },
 });

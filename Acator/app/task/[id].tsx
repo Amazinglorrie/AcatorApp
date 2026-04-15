@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../constants/theme";
+import { Colors, theme } from "../../constants/theme";
 import { Project, Task } from "../../constants/types";
 import { getProjects, getTasks } from "../../store/storage";
 
@@ -41,7 +41,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  "In Progress": { bg: "#E6F4EA", text: Colors.teal },
+  "In Progress": { bg: "#E6F4EA", text: theme.colors.primary },
   Pending: { bg: "#FFF3E0", text: Colors.amber },
   Done: { bg: "#E8F5E9", text: Colors.green },
 };
@@ -61,13 +61,13 @@ export default function TaskDetailScreen() {
   const [project, setProject] = useState<Project | null>(null);
   const [commentText, setCommentText] = useState("");
 
-  // Rich UI state (local only — extend storage later as needed)
   const [subtasks, setSubtasks] = useState<Subtask[]>([
     { id: "s1", name: "Onboarding flow wireframes", done: true },
     { id: "s2", name: "Dashboard prototypes", done: false },
     { id: "s3", name: "Setting flows", done: false },
     { id: "s4", name: "Error states & edge cases", done: false },
   ]);
+
   const [comments, setComments] = useState<Comment[]>([
     {
       id: "c1",
@@ -81,7 +81,7 @@ export default function TaskDetailScreen() {
       id: "c2",
       author: "Cecilia H.",
       initials: "CH",
-      avatarColor: Colors.teal,
+      avatarColor: theme.colors.primary,
       text: "No problem, I'll get right on it.",
       time: "",
     },
@@ -92,7 +92,6 @@ export default function TaskDetailScreen() {
   const assigneeInitials = "CH";
   const statusLabel = "In Progress";
   const progressPercent = 58;
-
   const doneSubtasks = subtasks.filter((s) => s.done).length;
 
   useEffect(() => {
@@ -154,13 +153,17 @@ export default function TaskDetailScreen() {
             onPress={() => router.back()}
             style={styles.backBtn}
           >
-            <Ionicons name="chevron-back" size={22} color={Colors.card} />
+            <Ionicons
+              name="chevron-back"
+              size={22}
+              color={theme.colors.textOnTeal}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>
             {project?.name ?? "Task"}
           </Text>
           <TouchableOpacity style={styles.editBtn}>
-            <Feather name="edit-2" size={18} color={Colors.card} />
+            <Feather name="edit-2" size={18} color={theme.colors.textOnTeal} />
           </TouchableOpacity>
         </View>
 
@@ -183,12 +186,17 @@ export default function TaskDetailScreen() {
             {project?.description ?? "No description provided."}
           </Text>
 
-          {/* ── Meta row ── */}
+          {/* ── Meta row 1 ── */}
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Text style={styles.metaLabel}>ASSIGNEE</Text>
               <View style={styles.assigneeRow}>
-                <View style={[styles.avatar, { backgroundColor: Colors.teal }]}>
+                <View
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
+                >
                   <Text style={styles.avatarText}>{assigneeInitials}</Text>
                 </View>
                 <Text style={styles.metaValue}>{assigneeName}</Text>
@@ -214,6 +222,7 @@ export default function TaskDetailScreen() {
             </View>
           </View>
 
+          {/* ── Meta row 2 ── */}
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Text style={styles.metaLabel}>PRIORITY</Text>
@@ -264,7 +273,13 @@ export default function TaskDetailScreen() {
               activeOpacity={0.7}
             >
               <View style={[styles.checkbox, s.done && styles.checkboxDone]}>
-                {s.done && <Ionicons name="checkmark" size={12} color="#fff" />}
+                {s.done && (
+                  <Ionicons
+                    name="checkmark"
+                    size={12}
+                    color={theme.colors.textOnTeal}
+                  />
+                )}
               </View>
               <Text style={[styles.subtaskName, s.done && styles.subtaskDone]}>
                 {s.name}
@@ -306,7 +321,7 @@ export default function TaskDetailScreen() {
               onSubmitEditing={sendComment}
             />
             <TouchableOpacity onPress={sendComment} style={styles.sendBtn}>
-              <Ionicons name="send" size={18} color={Colors.teal} />
+              <Ionicons name="send" size={18} color={theme.colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -322,9 +337,9 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 40 },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
 
-  // Header
+  // ── Header ──
   header: {
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     flexDirection: "row",
     alignItems: "center",
     paddingTop: 56,
@@ -333,12 +348,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { padding: 4 },
-  headerTitle: { flex: 1, color: "#fff", fontSize: 16, fontWeight: "600" },
+  headerTitle: {
+    flex: 1,
+    color: theme.colors.textOnTeal,
+    fontSize: 16,
+    fontWeight: "600",
+  },
   editBtn: { padding: 4 },
 
-  // Body
+  // ── Body ──
   body: { padding: 16, gap: 8 },
-
   titleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -360,6 +379,7 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 11, fontWeight: "600" },
 
+  // ── Section labels ──
   sectionLabel: {
     fontSize: 11,
     fontWeight: "600",
@@ -370,7 +390,7 @@ const styles = StyleSheet.create({
   },
   description: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
 
-  // Meta
+  // ── Meta ──
   metaRow: { flexDirection: "row", gap: 16, marginTop: 12 },
   metaItem: { flex: 1, gap: 4 },
   metaLabel: {
@@ -391,7 +411,7 @@ const styles = StyleSheet.create({
   },
   priorityText: { fontSize: 12, fontWeight: "600" },
 
-  // Progress
+  // ── Progress ──
   progressBar: {
     height: 6,
     backgroundColor: Colors.separator,
@@ -401,11 +421,11 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     borderRadius: 3,
   },
 
-  // Subtasks
+  // ── Subtasks ──
   subtaskHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -413,7 +433,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: Colors.textPrimary },
-  addSubtask: { fontSize: 13, color: Colors.teal, fontWeight: "500" },
+  addSubtask: { fontSize: 13, color: theme.colors.primary, fontWeight: "500" },
   subtaskRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -431,14 +451,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  checkboxDone: { backgroundColor: Colors.teal, borderColor: Colors.teal },
+  checkboxDone: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
   subtaskName: { flex: 1, fontSize: 13, color: Colors.textPrimary },
   subtaskDone: {
     textDecorationLine: "line-through",
     color: Colors.textTertiary,
   },
 
-  // Comments
+  // ── Comments ──
   commentRow: {
     flexDirection: "row",
     gap: 10,
@@ -447,33 +470,29 @@ const styles = StyleSheet.create({
   },
   commentBubble: {
     flex: 1,
-    backgroundColor: Colors.card,
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     padding: 10,
   },
   commentTime: { fontSize: 10, color: Colors.textTertiary, marginBottom: 2 },
   commentAuthor: { fontSize: 12, fontWeight: "700", color: Colors.textPrimary },
   commentText: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
 
-  // Input
+  // ── Input ──
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     marginTop: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: theme.colors.card,
     borderRadius: 24,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  input: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.textPrimary,
-  },
+  input: { flex: 1, fontSize: 13, color: Colors.textPrimary },
   sendBtn: { padding: 4 },
 
-  // Avatar
+  // ── Avatar ──
   avatar: {
     width: 32,
     height: 32,
@@ -481,5 +500,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  avatarText: {
+    color: theme.colors.textOnTeal,
+    fontSize: 11,
+    fontWeight: "700",
+  },
 });

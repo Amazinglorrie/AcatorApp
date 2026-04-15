@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Colors } from "../constants/theme";
+import { Colors, theme } from "../constants/theme";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -23,13 +23,13 @@ export default function EmptyState({
   return (
     <View style={styles.wrap}>
       <View style={styles.iconWrap}>
-        <Ionicons name={icon} size={40} color={Colors.teal} />
+        <Ionicons name={icon} size={40} color={theme.colors.primary} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
       {actionLabel && onAction && (
         <TouchableOpacity style={styles.btn} onPress={onAction}>
-          <Ionicons name="add" size={16} color="#fff" />
+          <Ionicons name="add" size={16} color={theme.colors.textOnTeal} />
           <Text style={styles.btnText}>{actionLabel}</Text>
         </TouchableOpacity>
       )}
@@ -70,10 +70,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 11,
     borderRadius: 12,
   },
-  btnText: { fontSize: 14, fontWeight: "500", color: "#fff" },
+  btnText: { fontSize: 14, fontWeight: "500", color: theme.colors.textOnTeal },
 });

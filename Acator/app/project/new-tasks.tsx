@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "../../constants/theme";
+import { Colors, theme } from "../../constants/theme";
 import { Project, Task } from "../../constants/types";
 import { saveProject, saveTask } from "../../store/storage";
 
@@ -48,12 +48,10 @@ export default function NewProjectTasksScreen() {
 
   const removeTask = (id: string) =>
     setTasks((prev) => prev.filter((t) => t.id !== id));
-
   const removeMember = (id: string) =>
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, member: null } : t)),
     );
-
   const addMember = (id: string) =>
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, member: "Terry Gerson" } : t)),
@@ -63,7 +61,6 @@ export default function NewProjectTasksScreen() {
     setEditingId(t.id);
     setEditingName(t.name);
   };
-
   const commitEdit = () => {
     if (!editingId) return;
     const name = editingName.trim();
@@ -97,14 +94,22 @@ export default function NewProjectTasksScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={theme.colors.textOnTeal}
+          />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
         <View style={styles.headerIcon}>
-          <Ionicons name="bookmark-outline" size={16} color="#fff" />
+          <Ionicons
+            name="bookmark-outline"
+            size={16}
+            color={theme.colors.textOnTeal}
+          />
         </View>
       </View>
 
@@ -117,16 +122,12 @@ export default function NewProjectTasksScreen() {
         <Text style={styles.pageTitle}>New Project</Text>
         <Text style={styles.sectionLabel}>Tasks</Text>
 
-        {/* Tasks card */}
+        {/* ── Tasks card ── */}
         <View style={styles.card}>
           {tasks.map((t, index) => (
             <View key={t.id}>
-              {/* Task row */}
               <View style={styles.taskRow}>
-                {/* Circle checkbox */}
                 <View style={styles.taskCircle} />
-
-                {/* Name or edit input */}
                 {editingId === t.id ? (
                   <TextInput
                     style={styles.taskNameInput}
@@ -142,7 +143,6 @@ export default function NewProjectTasksScreen() {
                     {t.name}
                   </Text>
                 )}
-
                 <TouchableOpacity
                   onPress={() => startEdit(t)}
                   hitSlop={8}
@@ -167,8 +167,7 @@ export default function NewProjectTasksScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Member row */}
-              {t.member ? (
+              {t.member && (
                 <View style={styles.memberRow}>
                   <View style={styles.memberAvatar}>
                     <Text style={styles.memberAvatarText}>TG</Text>
@@ -181,25 +180,22 @@ export default function NewProjectTasksScreen() {
                     <Text style={styles.removeBtnText}>Remove</Text>
                   </TouchableOpacity>
                 </View>
-              ) : null}
+              )}
 
-              {/* Add member to task */}
               <TouchableOpacity
                 style={styles.addMemberRow}
                 onPress={() => addMember(t.id)}
               >
                 <View style={styles.addMemberCircle}>
-                  <Ionicons name="add" size={14} color={Colors.teal} />
+                  <Ionicons name="add" size={14} color={theme.colors.primary} />
                 </View>
                 <Text style={styles.addMemberText}>Add member to task</Text>
               </TouchableOpacity>
 
-              {/* Divider between tasks */}
               {index < tasks.length - 1 && <View style={styles.taskDivider} />}
             </View>
           ))}
 
-          {/* New task input */}
           {addingNew && (
             <View style={styles.taskRow}>
               <View style={styles.taskCircle} />
@@ -217,7 +213,6 @@ export default function NewProjectTasksScreen() {
             </View>
           )}
 
-          {/* Add New Task button */}
           <TouchableOpacity
             style={[
               styles.addNewTaskRow,
@@ -226,17 +221,21 @@ export default function NewProjectTasksScreen() {
             onPress={() => setAddingNew(true)}
           >
             <View style={styles.addNewCircle}>
-              <Ionicons name="add" size={16} color={Colors.teal} />
+              <Ionicons name="add" size={16} color={theme.colors.primary} />
             </View>
             <Text style={styles.addNewTaskText}>Add New Task</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Finish button */}
+        {/* ── Finish button ── */}
         <View style={styles.finishRow}>
           <TouchableOpacity style={styles.finishBtn} onPress={handleFinish}>
             <Text style={styles.finishBtnText}>Finish</Text>
-            <Ionicons name="chevron-forward" size={18} color="#fff" />
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={theme.colors.textOnTeal}
+            />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -245,25 +244,24 @@ export default function NewProjectTasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.teal },
+  safe: { flex: 1, backgroundColor: theme.colors.primary },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
   },
   headerIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: theme.colors.overlay,
     alignItems: "center",
     justifyContent: "center",
   },
   scroll: { flex: 1, backgroundColor: "#EBF5F0" },
   content: { padding: 16, paddingBottom: 40 },
-
   pageTitle: {
     fontSize: 22,
     fontWeight: "700",
@@ -279,18 +277,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     marginBottom: 10,
   },
-
-  // Card
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card,
     paddingHorizontal: 14,
     paddingTop: 4,
     paddingBottom: 4,
     marginBottom: 24,
   },
-
-  // Task row
   taskRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -302,7 +296,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 1.5,
-    borderColor: Colors.teal,
+    borderColor: theme.colors.primary,
     flexShrink: 0,
   },
   taskName: {
@@ -323,8 +317,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF5F1",
     marginVertical: 2,
   },
-
-  // Member row
   memberRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -340,7 +332,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  memberAvatarText: { fontSize: 9, fontWeight: "700", color: "#fff" },
+  memberAvatarText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: theme.colors.textOnTeal,
+  },
   memberName: { flex: 1, fontSize: 13, color: Colors.textPrimary },
   removeBtn: {
     backgroundColor: Colors.destructive,
@@ -348,9 +344,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
-  removeBtnText: { fontSize: 11, fontWeight: "600", color: "#fff" },
-
-  // Add member
+  removeBtnText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+  },
   addMemberRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -363,13 +361,15 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: Colors.teal,
+    borderColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  addMemberText: { fontSize: 13, color: Colors.teal, fontWeight: "500" },
-
-  // Add New Task
+  addMemberText: {
+    fontSize: 13,
+    color: theme.colors.primary,
+    fontWeight: "500",
+  },
   addNewTaskRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -385,22 +385,28 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Colors.teal,
+    borderColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  addNewTaskText: { fontSize: 14, color: Colors.teal, fontWeight: "500" },
-
-  // Finish button
+  addNewTaskText: {
+    fontSize: 14,
+    color: theme.colors.primary,
+    fontWeight: "500",
+  },
   finishRow: { alignItems: "flex-end" },
   finishBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 28,
     paddingVertical: 13,
     borderRadius: 99,
   },
-  finishBtnText: { fontSize: 15, fontWeight: "600", color: "#fff" },
+  finishBtnText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+  },
 });

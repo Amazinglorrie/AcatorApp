@@ -13,13 +13,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import ProjectCard from "../../components/ProjectCard";
 import TaskRow from "../../components/TaskRow";
-import { colorBarFill, Colors } from "../../constants/theme";
+import { colorBarFill, Colors, theme } from "../../constants/theme";
 import { Project, Task } from "../../constants/types";
 import { getProgress } from "../../constants/utils";
 import {
   getProjects,
   getTasks,
   seedDataIfEmpty,
+  toggleTask,
 } from "../../store/storage";
 
 const RING_SIZE = 36;
@@ -98,7 +99,6 @@ export default function HomeScreen() {
   const doneTasks = tasks.filter((t) => t.status === "done").length;
   const overdue = projects.filter((p) => p.status === "overdue").length;
   const dueSoon = projects.filter((p) => p.status === "in-progress").length;
-
   const upcomingTasks = tasks
     .filter((t) => t.status === "pending")
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
@@ -112,13 +112,11 @@ export default function HomeScreen() {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-
-  // Top 3 active projects for the ring strip
   const ringProjects = activeProjects.slice(0, 3);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* Teal header */}
+      {/* ── Teal header ── */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>{greeting}</Text>
@@ -131,11 +129,11 @@ export default function HomeScreen() {
           style={styles.fab}
           onPress={() => router.push("/project/new")}
         >
-          <Ionicons name="add" size={22} color="#fff" />
+          <Ionicons name="add" size={22} color={theme.colors.textOnTeal} />
         </TouchableOpacity>
       </View>
 
-      {/* Progress ring strip — sits at the bottom of the header */}
+      {/* ── Progress ring strip ── */}
       {ringProjects.length > 0 && (
         <View style={styles.ringStrip}>
           {ringProjects.map((p) => {
@@ -170,11 +168,11 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.teal}
+            tintColor={theme.colors.primary}
           />
         }
       >
-        {/* Stats row */}
+        {/* ── Stats row ── */}
         <View style={styles.statsRow}>
           <View style={styles.statTile}>
             <Text style={styles.statLabel}>Tasks done</Text>
@@ -197,7 +195,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Projects */}
+        {/* ── Projects ── */}
         <Text style={styles.sectionLabel}>Projects</Text>
         {projects.length === 0 && (
           <Text style={styles.empty}>
@@ -213,7 +211,7 @@ export default function HomeScreen() {
           />
         ))}
 
-        {/* Upcoming tasks */}
+        {/* ── Upcoming tasks ── */}
         {upcomingTasks.length > 0 && (
           <>
             <Text style={styles.sectionLabel}>Upcoming tasks</Text>
@@ -233,8 +231,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.teal },
-
+  safe: { flex: 1, backgroundColor: theme.colors.primary },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -242,37 +239,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 14,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
   },
   greeting: {
     fontSize: 26,
     fontWeight: "500",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
     letterSpacing: -0.5,
   },
-  subtitle: { fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 2 },
+  subtitle: { fontSize: 13, color: theme.colors.textOnTealMuted, marginTop: 2 },
   fab: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: theme.colors.overlay,
     alignItems: "center",
     justifyContent: "center",
   },
-
   ringStrip: {
     flexDirection: "row",
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 16,
     paddingBottom: 16,
     gap: 12,
   },
-  ringItem: {
-    alignItems: "center",
-    gap: 5,
-    flex: 1,
-    maxWidth: 80,
-  },
+  ringItem: { alignItems: "center", gap: 5, flex: 1, maxWidth: 80 },
   ringWrap: {
     width: RING_SIZE,
     height: RING_SIZE,
@@ -283,29 +274,26 @@ const styles = StyleSheet.create({
     position: "absolute",
     fontSize: 9,
     fontWeight: "500",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
   },
   ringLabel: {
     fontSize: 10,
-    color: "rgba(255,255,255,0.85)",
+    color: theme.colors.textOnTealMuted,
     textAlign: "center",
     maxWidth: 72,
   },
-
   scroll: { flex: 1, backgroundColor: Colors.background },
   content: { padding: 16, paddingBottom: 32 },
-
   statsRow: { flexDirection: "row", gap: 8, marginBottom: 20 },
   statTile: {
     flex: 1,
-    backgroundColor: Colors.card,
+    backgroundColor: theme.colors.card,
     borderRadius: 14,
     padding: 12,
   },
   statLabel: { fontSize: 11, color: Colors.textSecondary, marginBottom: 4 },
   statValue: { fontSize: 20, fontWeight: "500", color: Colors.textPrimary },
   statSub: { fontSize: 14, color: Colors.textTertiary },
-
   sectionLabel: {
     fontSize: 12,
     fontWeight: "500",

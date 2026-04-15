@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,40 +16,55 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
+import { z } from "zod";
+import { theme } from "../../constants/theme";
+import { useAuth } from "../../context/AuthContext";
+
+// ── Validation schema ─────────────────────────────────────────────────────────
+
+const signupSchema = z.object({
+  name: z.string().trim().min(2, "Please enter your full name."),
+  email: z.string().trim().email("Please enter a valid email address."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+});
+
+type SignupForm = z.infer<typeof signupSchema>;
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SignupScreen() {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { signUp } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleSignup = async () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert("Missing fields", "Please fill in all fields.");
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert("Weak password", "Password must be at least 6 characters.");
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-      options: { data: { full_name: name.trim() } },
-    });
-    setLoading(false);
-    if (error) {
-      Alert.alert("Sign up failed", error.message);
-    } else {
+  const {
+    control,
+    handleSubmit,
+    getValues,
+    formState: { errors },
+  } = useForm<SignupForm>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { name: "", email: "", password: "" },
+    mode: "onSubmit",
+  });
+
+  const onSubmit = async (data: SignupForm) => {
+    try {
+      setAuthError(null);
+      setIsSubmitting(true);
+      await signUp(data.email, data.password);
+      // Navigate to verify-email after successful sign-up
       router.replace({
         pathname: "/(auth)/verify-email",
-        params: { email: email.trim() },
+        params: { email: data.email.trim() },
       });
+    } catch (e) {
+      setAuthError(
+        e instanceof Error ? e.message : "Sign up failed. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -63,14 +80,20 @@ export default function SignupScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* ── Back button ── */}
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => router.back()}
             hitSlop={10}
           >
-            <Ionicons name="chevron-back" size={24} color="#fff" />
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={theme.colors.textOnTeal}
+            />
           </TouchableOpacity>
 
+          {/* ── Logo ── */}
           <View style={styles.logoArea}>
             <View style={styles.logoMark}>
               <View style={styles.logoLeft} />
@@ -82,70 +105,135 @@ export default function SignupScreen() {
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>Create account</Text>
 
-            <Text style={styles.fieldLabel}>Full name</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                returnKeyType="next"
-              />
-            </View>
-
-            <Text style={styles.fieldLabel}>Email</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                returnKeyType="next"
-              />
-            </View>
-
-            <Text style={styles.fieldLabel}>Password</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                returnKeyType="done"
-                onSubmitEditing={handleSignup}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                hitSlop={8}
-              >
+            {/* ── Auth error banner ── */}
+            {authError && (
+              <View style={styles.errorBanner}>
                 <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={18}
-                  color="rgba(255,255,255,0.6)"
+                  name="alert-circle-outline"
+                  size={16}
+                  color={theme.colors.error}
                 />
-              </TouchableOpacity>
-            </View>
+                <Text style={styles.errorBannerText}>{authError}</Text>
+              </View>
+            )}
 
-            <TouchableOpacity
-              style={[styles.signupBtn, loading && { opacity: 0.7 }]}
-              onPress={handleSignup}
-              disabled={loading}
+            {/* ── Full name ── */}
+            <Text style={styles.fieldLabel}>Full name</Text>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, value } }) => (
+                <View
+                  style={[
+                    styles.inputWrap,
+                    errors.name && styles.inputWrapError,
+                  ]}
+                >
+                  <TextInput
+                    style={styles.input}
+                    value={value}
+                    onChangeText={onChange}
+                    autoCapitalize="words"
+                    autoComplete="name"
+                    returnKeyType="next"
+                    placeholderTextColor={theme.colors.placeholderOnTeal}
+                  />
+                </View>
+              )}
+            />
+            {errors.name && (
+              <Text style={styles.fieldError}>{errors.name.message}</Text>
+            )}
+
+            {/* ── Email ── */}
+            <Text style={styles.fieldLabel}>Email</Text>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value } }) => (
+                <View
+                  style={[
+                    styles.inputWrap,
+                    errors.email && styles.inputWrapError,
+                  ]}
+                >
+                  <TextInput
+                    style={styles.input}
+                    value={value}
+                    onChangeText={onChange}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                    returnKeyType="next"
+                    placeholderTextColor={theme.colors.placeholderOnTeal}
+                  />
+                </View>
+              )}
+            />
+            {errors.email && (
+              <Text style={styles.fieldError}>{errors.email.message}</Text>
+            )}
+
+            {/* ── Password ── */}
+            <Text style={styles.fieldLabel}>Password</Text>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, value } }) => (
+                <View
+                  style={[
+                    styles.inputWrap,
+                    errors.password && styles.inputWrapError,
+                  ]}
+                >
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    autoComplete="new-password"
+                    returnKeyType="done"
+                    onSubmitEditing={handleSubmit(onSubmit)}
+                    placeholderTextColor={theme.colors.placeholderOnTeal}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      size={18}
+                      color={theme.colors.textOnTealMuted}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+            {errors.password && (
+              <Text style={styles.fieldError}>{errors.password.message}</Text>
+            )}
+
+            {/* ── Submit button ── */}
+            <Pressable
+              style={[styles.signupBtn, isSubmitting && { opacity: 0.7 }]}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
             >
-              {loading ? (
-                <ActivityIndicator color={Colors.teal} />
+              {isSubmitting ? (
+                <ActivityIndicator color={theme.colors.primary} />
               ) : (
                 <>
                   <Text style={styles.signupBtnText}>Create account</Text>
                   <Ionicons
                     name="chevron-forward"
                     size={18}
-                    color={Colors.teal}
+                    color={theme.colors.primary}
                   />
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
 
+            {/* ── Sign in link ── */}
             <TouchableOpacity
               style={styles.loginLink}
               onPress={() => router.replace("/(auth)/login")}
@@ -162,10 +250,27 @@ export default function SignupScreen() {
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.teal },
-  scroll: { flexGrow: 1, paddingBottom: 40 },
-  backBtn: { position: "absolute", top: 52, left: 20, zIndex: 10 },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+
+  // ── Back ──
+  backBtn: {
+    position: "absolute",
+    top: 52,
+    left: 20,
+    zIndex: 10,
+  },
+
+  // ── Logo ──
   logoArea: {
     flexDirection: "row",
     alignItems: "center",
@@ -181,7 +286,7 @@ const styles = StyleSheet.create({
     left: 0,
     width: 5,
     height: 36,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     borderRadius: 3,
     transform: [{ rotate: "15deg" }],
   },
@@ -191,46 +296,102 @@ const styles = StyleSheet.create({
     left: 1,
     width: 22,
     height: 4,
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: theme.colors.textOnTealMuted,
     borderRadius: 2,
     transform: [{ rotate: "15deg" }],
   },
-  appName: { fontSize: 30, fontWeight: "600", color: "#fff", letterSpacing: 1 },
-  formCard: { paddingHorizontal: 28 },
+  appName: {
+    fontSize: 30,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+    letterSpacing: 1,
+  },
+
+  // ── Form ──
+  formCard: {
+    paddingHorizontal: theme.spacing.screen,
+  },
   formTitle: {
-    fontSize: 18,
+    ...theme.typography.subtitle,
     fontWeight: "500",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
     textAlign: "center",
     marginBottom: 28,
   },
+
+  // ── Error banner ──
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    borderRadius: theme.radius.input,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.error,
+  },
+
+  // ── Fields ──
   fieldLabel: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
+    ...theme.typography.label,
+    color: theme.colors.textOnTealMuted,
     marginBottom: 8,
   },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 10,
+    backgroundColor: theme.colors.overlay,
+    borderRadius: theme.radius.input,
+    borderWidth: 1,
+    borderColor: "transparent",
     paddingHorizontal: 14,
-    marginBottom: 18,
-    height: 48,
+    marginBottom: theme.spacing.gap,
+    height: theme.spacing.inputH,
   },
-  input: { flex: 1, fontSize: 15, color: "#fff" },
+  inputWrapError: {
+    borderColor: theme.colors.error,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: theme.colors.textOnTeal,
+  },
+  fieldError: {
+    color: theme.colors.error,
+    fontSize: 13,
+    marginTop: -8,
+    marginBottom: theme.spacing.gap,
+  },
+
+  // ── Submit ──
   signupBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingVertical: 14,
     marginTop: 8,
   },
-  signupBtnText: { fontSize: 15, fontWeight: "600", color: Colors.teal },
-  loginLink: { alignItems: "center", marginTop: 20 },
-  loginLinkText: { fontSize: 14, color: "rgba(255,255,255,0.8)" },
+  signupBtnText: {
+    ...theme.typography.button,
+    color: theme.colors.primary,
+  },
+
+  // ── Sign in link ──
+  loginLink: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  loginLinkText: {
+    ...theme.typography.link,
+    color: theme.colors.textOnTealMuted,
+  },
 });

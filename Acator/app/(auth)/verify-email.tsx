@@ -1,18 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Colors } from "../../constants/theme";
+import { theme } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
+  const [resendStatus, setResendStatus] = useState<"idle" | "sent" | "error">(
+    "idle",
+  );
 
   const handleResend = async () => {
     if (!email) return;
-    await supabase.auth.resend({ type: "signup", email });
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    setResendStatus(error ? "error" : "sent");
+    setTimeout(() => setResendStatus("idle"), 4000);
   };
 
   return (
@@ -20,8 +25,13 @@ export default function VerifyEmailScreen() {
       <StatusBar style="light" />
 
       <View style={styles.inner}>
+        {/* ── Icon ── */}
         <View style={styles.iconCircle}>
-          <Ionicons name="mail-outline" size={48} color="#fff" />
+          <Ionicons
+            name="mail-outline"
+            size={48}
+            color={theme.colors.textOnTeal}
+          />
         </View>
 
         <Text style={styles.title}>Check your email</Text>
@@ -34,14 +44,46 @@ export default function VerifyEmailScreen() {
           and sign in.
         </Text>
 
+        {/* ── Resend feedback ── */}
+        {resendStatus === "sent" && (
+          <View style={styles.feedbackBanner}>
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={16}
+              color={theme.colors.textOnTeal}
+            />
+            <Text style={styles.feedbackText}>
+              Email resent! Check your inbox.
+            </Text>
+          </View>
+        )}
+        {resendStatus === "error" && (
+          <View style={[styles.feedbackBanner, styles.feedbackBannerError]}>
+            <Ionicons
+              name="alert-circle-outline"
+              size={16}
+              color={theme.colors.error}
+            />
+            <Text style={[styles.feedbackText, styles.feedbackTextError]}>
+              Failed to resend. Please try again.
+            </Text>
+          </View>
+        )}
+
+        {/* ── Go to login ── */}
         <TouchableOpacity
           style={styles.loginBtn}
           onPress={() => router.replace("/(auth)/login")}
         >
           <Text style={styles.loginBtnText}>Go to login</Text>
-          <Ionicons name="chevron-forward" size={18} color={Colors.teal} />
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={theme.colors.primary}
+          />
         </TouchableOpacity>
 
+        {/* ── Resend ── */}
         <TouchableOpacity style={styles.resendBtn} onPress={handleResend}>
           <Text style={styles.resendText}>Didn't receive it? Resend email</Text>
         </TouchableOpacity>
@@ -50,59 +92,91 @@ export default function VerifyEmailScreen() {
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.teal },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+  },
   inner: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
-    gap: 12,
+    gap: theme.spacing.gap,
   },
   iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    width: theme.icon.circleSize + 10,
+    height: theme.icon.circleSize + 10,
+    borderRadius: theme.radius.pill + 5,
+    backgroundColor: theme.icon.circleBg,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
   },
   title: {
+    ...theme.typography.title,
     fontSize: 26,
-    fontWeight: "700",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 15,
-    color: "rgba(255,255,255,0.8)",
+    ...theme.typography.subtitle,
+    color: theme.colors.textOnTealMuted,
     textAlign: "center",
-    lineHeight: 22,
   },
-  emailText: { fontWeight: "700", color: "#fff" },
+  emailText: {
+    fontWeight: "700",
+    color: theme.colors.textOnTeal,
+  },
   instruction: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.65)",
+    ...theme.typography.body,
+    color: theme.colors.textOnTealFaint,
     textAlign: "center",
-    lineHeight: 20,
     marginTop: 4,
+  },
+  feedbackBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: theme.radius.input,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    width: "100%",
+  },
+  feedbackBannerError: {
+    backgroundColor: "#fef2f2",
+  },
+  feedbackText: {
+    ...theme.typography.body,
+    color: theme.colors.textOnTeal,
+    flex: 1,
+  },
+  feedbackTextError: {
+    color: theme.colors.error,
   },
   loginBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingHorizontal: 28,
     paddingVertical: 14,
     marginTop: 16,
   },
-  loginBtnText: { fontSize: 15, fontWeight: "600", color: Colors.teal },
-  resendBtn: { marginTop: 12 },
+  loginBtnText: {
+    ...theme.typography.button,
+    color: theme.colors.primary,
+  },
+  resendBtn: {
+    marginTop: 12,
+  },
   resendText: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.7)",
+    ...theme.typography.link,
+    color: theme.colors.textOnTealFaint,
     textDecorationLine: "underline",
   },
 });

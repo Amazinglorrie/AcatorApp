@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DatePickerModal from "../../components/DatePickerModal";
-import { Colors } from "../../constants/theme";
+import { Colors, theme } from "../../constants/theme";
 import { Project, Task } from "../../constants/types";
 import { formatDueDate } from "../../constants/utils";
 import { getProjects, saveTask } from "../../store/storage";
@@ -67,9 +67,14 @@ export default function NewTaskScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={theme.colors.textOnTeal}
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Task</Text>
         <TouchableOpacity onPress={handleSave} hitSlop={10}>
@@ -83,6 +88,7 @@ export default function NewTaskScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* ── Task name ── */}
         <Text style={styles.label}>Task name</Text>
         <TextInput
           style={styles.input}
@@ -94,6 +100,7 @@ export default function NewTaskScreen() {
           returnKeyType="done"
         />
 
+        {/* ── Project picker ── */}
         <Text style={styles.label}>Project</Text>
         <TouchableOpacity
           style={styles.pickerBtn}
@@ -130,13 +137,18 @@ export default function NewTaskScreen() {
                 </Text>
                 <Text style={styles.pickerItemSub}>{p.subject}</Text>
                 {p.id === selectedProjectId && (
-                  <Ionicons name="checkmark" size={16} color={Colors.teal} />
+                  <Ionicons
+                    name="checkmark"
+                    size={16}
+                    color={theme.colors.primary}
+                  />
                 )}
               </TouchableOpacity>
             ))}
           </View>
         )}
 
+        {/* ── Due date ── */}
         <Text style={styles.label}>Due date</Text>
         <TouchableOpacity
           style={styles.pickerBtn}
@@ -157,6 +169,7 @@ export default function NewTaskScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* ── Save button ── */}
         <TouchableOpacity style={styles.saveFullBtn} onPress={handleSave}>
           <Text style={styles.saveFullBtnText}>Save task</Text>
         </TouchableOpacity>
@@ -175,21 +188,27 @@ export default function NewTaskScreen() {
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.teal },
+  safe: { flex: 1, backgroundColor: theme.colors.primary },
   header: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
   },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: "500", color: "#fff" },
-  saveBtn: { fontSize: 15, fontWeight: "500", color: "#fff" },
+  headerTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "500",
+    color: theme.colors.textOnTeal,
+  },
+  saveBtn: { fontSize: 15, fontWeight: "500", color: theme.colors.textOnTeal },
   scroll: { flex: 1, backgroundColor: Colors.background },
   content: { padding: 16, paddingBottom: 40 },
-
   label: {
     fontSize: 12,
     fontWeight: "500",
@@ -197,8 +216,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
@@ -208,8 +227,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   pickerBtn: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: "row",
@@ -224,11 +243,11 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
   },
   pickerList: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     borderWidth: 0.5,
     borderColor: Colors.separator,
     marginBottom: 14,
@@ -244,15 +263,18 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.separator,
   },
   pickerItemText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
-  pickerItemTextActive: { color: Colors.teal, fontWeight: "500" },
+  pickerItemTextActive: { color: theme.colors.primary, fontWeight: "500" },
   pickerItemSub: { fontSize: 11, color: Colors.textTertiary },
-
   saveFullBtn: {
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 16,
   },
-  saveFullBtnText: { fontSize: 15, fontWeight: "500", color: "#fff" },
+  saveFullBtnText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: theme.colors.textOnTeal,
+  },
 });

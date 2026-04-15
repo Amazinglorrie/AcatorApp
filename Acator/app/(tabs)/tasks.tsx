@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TaskRow from "../../components/TaskRow";
-import { Colors } from "../../constants/theme";
+import { Colors, theme } from "../../constants/theme";
 import { Project, Task } from "../../constants/types";
 import { getDueVariant } from "../../constants/utils";
 import {
@@ -108,6 +108,7 @@ export default function TasksScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* ── Header ── */}
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Tasks</Text>
@@ -119,10 +120,11 @@ export default function TasksScreen() {
           style={styles.addBtn}
           onPress={() => router.push("/task/new")}
         >
-          <Ionicons name="add" size={22} color="#fff" />
+          <Ionicons name="add" size={22} color={theme.colors.textOnTeal} />
         </TouchableOpacity>
       </View>
 
+      {/* ── Filter pills ── */}
       <View style={styles.filterRow}>
         {(["all", "pending", "done"] as Filter[]).map((f) => (
           <TouchableOpacity
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -194,11 +196,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 99,
-    backgroundColor: Colors.card,
+    backgroundColor: theme.colors.card,
   },
-  filterActive: { backgroundColor: Colors.teal },
+  filterActive: { backgroundColor: theme.colors.primary },
   filterText: { fontSize: 13, color: Colors.textSecondary },
-  filterTextActive: { color: "#fff", fontWeight: "500" },
+  filterTextActive: { color: theme.colors.textOnTeal, fontWeight: "500" },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, paddingBottom: 32 },
   sectionLabel: {

@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colorBarFill, Colors } from "../../constants/theme";
+import { colorBarFill, Colors, theme } from "../../constants/theme";
 import { Project, Task } from "../../constants/types";
 import {
   formatDueDate,
@@ -52,7 +52,7 @@ const AVATAR_COLORS = [
   { bg: "#E53935", text: "#fff" },
   { bg: "#8E24AA", text: "#fff" },
   { bg: "#1E88E5", text: "#fff" },
-  { bg: Colors.teal, text: "#fff" },
+  { bg: theme.colors.primary, text: "#fff" },
   { bg: "#F4511E", text: "#fff" },
 ];
 
@@ -176,10 +176,14 @@ export default function TaskDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={theme.colors.textOnTeal}
+          />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
         <TouchableOpacity
@@ -187,14 +191,22 @@ export default function TaskDetailScreen() {
           hitSlop={10}
           style={{ marginRight: 8 }}
         >
-          <Ionicons name="create-outline" size={20} color="#fff" />
+          <Ionicons
+            name="create-outline"
+            size={20}
+            color={theme.colors.textOnTeal}
+          />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleDeleteProject} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color="#fff" />
+          <Ionicons
+            name="trash-outline"
+            size={20}
+            color={theme.colors.textOnTeal}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Tabs */}
+      {/* ── Tabs ── */}
       <View style={styles.tabRow}>
         {(["overview", "kanban"] as const).map((tab) => (
           <TouchableOpacity
@@ -217,7 +229,7 @@ export default function TaskDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── KANBAN TAB ── horizontally scrollable, full height */}
+      {/* ── KANBAN TAB ── */}
       {activeTab === "kanban" ? (
         <ScrollView
           horizontal
@@ -225,7 +237,7 @@ export default function TaskDetailScreen() {
           style={styles.kanbanOuter}
           contentContainerStyle={styles.kanbanContent}
         >
-          {/* Backlog column */}
+          {/* Backlog */}
           <View style={styles.kanbanCol}>
             <View
               style={[
@@ -234,7 +246,11 @@ export default function TaskDetailScreen() {
               ]}
             >
               <Text style={styles.kanbanColTitle}>Backlog</Text>
-              <Ionicons name="create-outline" size={16} color="#fff" />
+              <Ionicons
+                name="create-outline"
+                size={16}
+                color={theme.colors.textOnTeal}
+              />
             </View>
             {pending.length === 0 && (
               <View style={styles.kanbanCard}>
@@ -259,7 +275,7 @@ export default function TaskDetailScreen() {
                   <View
                     style={[
                       styles.kanbanAvatar,
-                      { backgroundColor: Colors.teal },
+                      { backgroundColor: theme.colors.primary },
                     ]}
                   >
                     <Text style={styles.kanbanAvatarText}>CH</Text>
@@ -269,7 +285,7 @@ export default function TaskDetailScreen() {
             ))}
           </View>
 
-          {/* In Progress column */}
+          {/* In Progress */}
           <View style={styles.kanbanCol}>
             <View
               style={[styles.kanbanColHeader, { backgroundColor: "#FFB300" }]}
@@ -296,7 +312,7 @@ export default function TaskDetailScreen() {
             )}
           </View>
 
-          {/* Done column */}
+          {/* Done */}
           <View style={styles.kanbanCol}>
             <View
               style={[
@@ -341,7 +357,7 @@ export default function TaskDetailScreen() {
           </View>
         </ScrollView>
       ) : (
-        /* ── OVERVIEW TAB ── vertical scroll */
+        /* ── OVERVIEW TAB ── */
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -390,7 +406,7 @@ export default function TaskDetailScreen() {
                     <View
                       style={[
                         styles.assigneeAvatar,
-                        { backgroundColor: Colors.teal },
+                        { backgroundColor: theme.colors.primary },
                       ]}
                     >
                       <Text style={styles.assigneeAvatarText}>CH</Text>
@@ -404,7 +420,7 @@ export default function TaskDetailScreen() {
                     <Ionicons
                       name="calendar-outline"
                       size={13}
-                      color={Colors.teal}
+                      color={theme.colors.primary}
                     />
                     <Text style={styles.dueDateText}>
                       {formatDueDate(project.dueDate)}
@@ -452,7 +468,7 @@ export default function TaskDetailScreen() {
                             <Ionicons
                               name="checkmark"
                               size={14}
-                              color={Colors.teal}
+                              color={theme.colors.primary}
                             />
                           )}
                         </TouchableOpacity>
@@ -462,7 +478,12 @@ export default function TaskDetailScreen() {
                 </View>
                 <View style={styles.metaCol}>
                   <Text style={styles.metaLabel}>TASK PROGRESS (%):</Text>
-                  <Text style={[styles.priorityText, { color: Colors.teal }]}>
+                  <Text
+                    style={[
+                      styles.priorityText,
+                      { color: theme.colors.primary },
+                    ]}
+                  >
                     {progress}%
                   </Text>
                 </View>
@@ -502,7 +523,11 @@ export default function TaskDetailScreen() {
                     ]}
                   >
                     {t.status === "done" && (
-                      <Ionicons name="checkmark" size={12} color="#fff" />
+                      <Ionicons
+                        name="checkmark"
+                        size={12}
+                        color={theme.colors.textOnTeal}
+                      />
                     )}
                   </View>
                   <Text
@@ -571,7 +596,10 @@ export default function TaskDetailScreen() {
           {/* Comment input bar */}
           <View style={styles.commentInputBar}>
             <View
-              style={[styles.commentAvatar, { backgroundColor: Colors.teal }]}
+              style={[
+                styles.commentAvatar,
+                { backgroundColor: theme.colors.primary },
+              ]}
             >
               <Text style={styles.commentAvatarText}>SJ</Text>
             </View>
@@ -588,7 +616,7 @@ export default function TaskDetailScreen() {
               style={styles.sendBtn}
               onPress={handleSendComment}
             >
-              <Ionicons name="send" size={15} color="#fff" />
+              <Ionicons name="send" size={15} color={theme.colors.textOnTeal} />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -597,18 +625,22 @@ export default function TaskDetailScreen() {
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.teal },
+  safe: { flex: 1, backgroundColor: theme.colors.primary },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
   },
+
+  // ── Tabs ──
   tabRow: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     paddingHorizontal: 16,
     paddingTop: 10,
     gap: 8,
@@ -616,11 +648,11 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.separator,
   },
   tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  tabActive: { backgroundColor: Colors.teal },
+  tabActive: { backgroundColor: theme.colors.primary },
   tabText: { fontSize: 13, fontWeight: "500", color: Colors.textSecondary },
-  tabTextActive: { color: "#fff" },
+  tabTextActive: { color: theme.colors.textOnTeal },
 
-  // Kanban
+  // ── Kanban ──
   kanbanOuter: { flex: 1, backgroundColor: "#EBF5F0" },
   kanbanContent: {
     padding: 16,
@@ -638,9 +670,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
   },
-  kanbanColTitle: { fontSize: 15, fontWeight: "600", color: "#fff" },
+  kanbanColTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+  },
   kanbanCard: {
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
@@ -669,7 +705,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  kanbanAvatarText: { fontSize: 10, fontWeight: "600", color: "#fff" },
+  kanbanAvatarText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+  },
   kanbanEmpty: {
     fontSize: 13,
     color: Colors.textTertiary,
@@ -689,7 +729,7 @@ const styles = StyleSheet.create({
     color: Colors.badgeText.teal,
   },
 
-  // Overview
+  // ── Overview ──
   scroll: { flex: 1, backgroundColor: "#EBF5F0" },
   content: { padding: 16, paddingBottom: 24 },
   titleRow: {
@@ -710,7 +750,7 @@ const styles = StyleSheet.create({
   statusBadgeText: { fontSize: 12, fontWeight: "600" },
   subject: { fontSize: 12, color: Colors.textSecondary, marginBottom: 14 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     padding: 14,
     marginBottom: 20,
@@ -752,17 +792,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  assigneeAvatarText: { fontSize: 10, fontWeight: "600", color: "#fff" },
+  assigneeAvatarText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+  },
   assigneeName: { fontSize: 13, fontWeight: "500", color: Colors.textPrimary },
   dueDateRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  dueDateText: { fontSize: 13, fontWeight: "500", color: Colors.teal },
+  dueDateText: { fontSize: 13, fontWeight: "500", color: theme.colors.primary },
   priorityText: { fontSize: 13, fontWeight: "600" },
   priorityDropdown: {
     position: "absolute",
     top: 24,
     left: 0,
     zIndex: 99,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     borderRadius: 10,
     borderWidth: 0.5,
     borderColor: Colors.separator,
@@ -787,7 +831,11 @@ const styles = StyleSheet.create({
   },
   subtasksTitle: { fontSize: 15, fontWeight: "600", color: Colors.textPrimary },
   subtasksCount: { color: Colors.textTertiary, fontWeight: "400" },
-  addSubtaskText: { fontSize: 13, color: Colors.teal, fontWeight: "500" },
+  addSubtaskText: {
+    fontSize: 13,
+    color: theme.colors.primary,
+    fontWeight: "500",
+  },
   progressBg: {
     height: 6,
     backgroundColor: "#D0EAE0",
@@ -797,7 +845,7 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: "100%", borderRadius: 99 },
   taskList: {
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
     paddingHorizontal: 14,
     marginBottom: 24,
@@ -820,7 +868,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  subtaskCheckDone: { backgroundColor: Colors.teal, borderColor: Colors.teal },
+  subtaskCheckDone: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
   subtaskCheckEmpty: { width: 20, height: 20, flexShrink: 0 },
   subtaskName: { flex: 1, fontSize: 14, color: Colors.textPrimary },
   subtaskNameDone: {
@@ -850,7 +901,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  commentAvatarText: { fontSize: 12, fontWeight: "600", color: "#fff" },
+  commentAvatarText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+  },
   commentBody: { flex: 1 },
   commentAuthor: {
     fontSize: 13,
@@ -866,7 +921,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.separator,
   },
@@ -885,7 +940,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },

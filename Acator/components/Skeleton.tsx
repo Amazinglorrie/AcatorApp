@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
-import { Colors } from "../constants/theme";
+import { Colors, theme } from "../constants/theme";
 
 function SkeletonBox({
   width,
@@ -101,8 +101,8 @@ export function StatTileSkeleton() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card,
     padding: 14,
     marginBottom: 10,
   },
@@ -112,8 +112,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   taskRow: {
-    backgroundColor: Colors.card,
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card - 2,
     padding: 12,
     marginBottom: 8,
     flexDirection: "row",
@@ -122,8 +122,8 @@ const styles = StyleSheet.create({
   },
   statTile: {
     flex: 1,
-    backgroundColor: Colors.card,
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card - 2,
     padding: 12,
   },
 });

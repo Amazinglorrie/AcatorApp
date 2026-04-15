@@ -63,25 +63,34 @@ export async function scheduleDueTaskNotifications(): Promise<void> {
     const projectName = project?.name ?? "a project";
 
     if (variant === "overdue") {
+      // SDK 53: immediate notifications use { seconds: 1 } instead of null
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "⚠️ Task overdue",
           body: `"${task.name}" in ${projectName} is past due.`,
           data: { taskId: task.id, projectId: task.projectId },
         },
-        trigger: null,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 1,
+        },
       });
     } else if (variant === "soon") {
-      const trigger = new Date();
-      trigger.setHours(9, 0, 0, 0);
-      if (trigger < new Date()) trigger.setDate(trigger.getDate() + 1);
+      // SDK 53: scheduled date notifications use { type: "date", date: Date }
+      const fireDate = new Date();
+      fireDate.setHours(9, 0, 0, 0);
+      if (fireDate <= new Date()) fireDate.setDate(fireDate.getDate() + 1);
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "⏰ Task due soon",
           body: `"${task.name}" in ${projectName} is due soon.`,
           data: { taskId: task.id, projectId: task.projectId },
         },
-        trigger: { date: trigger },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: fireDate,
+        },
       });
     }
   }

@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
-import { Colors } from "../../constants/theme";
+import { theme } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
 
 export default function SplashScreen() {
@@ -73,19 +73,38 @@ export default function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.teal },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
+// ── Styles ────────────────────────────────────────────────────────────────────
 
-  logoWrap: { flexDirection: "row", alignItems: "flex-end", gap: 4 },
-  logoMark: { width: 48, height: 56, position: "relative" },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+
+  // ── Logo mark ──
+  logoWrap: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  logoMark: {
+    width: 48,
+    height: 56,
+    position: "relative",
+  },
   logoLeft: {
     position: "absolute",
     bottom: 0,
     left: 0,
     width: 6,
     height: 48,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.textOnTeal,
     borderRadius: 3,
     transform: [{ rotate: "15deg" }],
   },
@@ -95,15 +114,16 @@ const styles = StyleSheet.create({
     left: 2,
     width: 28,
     height: 5,
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: theme.colors.textOnTealMuted,
     borderRadius: 3,
     transform: [{ rotate: "15deg" }],
   },
 
+  // ── App name ──
   appName: {
     fontSize: 36,
     fontWeight: "600",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
     letterSpacing: 1,
   },
 });

@@ -1,35 +1,49 @@
-import { Session } from "@supabase/supabase-js";
+// Wraps the entire app in AuthProvider and adds AuthGuard for protected routes.
+//
+// AuthGuard pattern:
+//   - Watches session + current route segments
+//   - If no session + inside (tabs) group → redirect to /(auth)
+//   - If session exists + on (auth) screens → redirect to /(tabs)
+//   This means every protected screen is automatically guarded — no manual
+//   checks needed in each tab screen.
+
 import * as Notifications from "expo-notifications";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { supabase } from "../lib/supabase";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import {
   registerForPushNotifications,
   scheduleDueTaskNotifications,
 } from "../store/notifications";
 
-export default function RootLayout() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
+// ── AuthGuard ─────────────────────────────────────────────────────────────────
+
+const AuthGuard = ({ children }: { children: React.ReactNode }) => {
+  const { session, isLoading } = useAuth();
+  const segments = useSegments();
   const router = useRouter();
-  const notificationListener = useRef<any>();
-  const responseListener = useRef<any>();
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) setupNotifications();
-    });
+    if (isLoading) return;
 
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) setupNotifications();
-    });
+    const inTabGroup = segments[0] === "(tabs)";
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (!session && inTabGroup) {
+      router.replace("/(auth)");
+    } else if (session && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [session, isLoading, segments]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    setupNotifications();
 
     // Handle notification taps — navigate to the right project
     responseListener.current =
@@ -41,41 +55,43 @@ export default function RootLayout() {
       });
 
     return () => {
-      subscription.unsubscribe();
-      if (notificationListener.current)
-        Notifications.removeNotificationSubscription(
-          notificationListener.current,
-        );
-      if (responseListener.current)
-        Notifications.removeNotificationSubscription(responseListener.current);
+      // SDK 53+: call .remove() directly on the subscription object
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
     };
-  }, []);
+  }, [session]);
 
   const setupNotifications = async () => {
     const token = await registerForPushNotifications();
     if (token) {
-      // Optionally save token to Supabase for server-side push
       console.log("Push token:", token);
     }
     await scheduleDueTaskNotifications();
   };
 
-  if (session === undefined) return null;
+  if (isLoading) return null;
 
+  return <>{children}</>;
+};
+
+// ── Root Layout ───────────────────────────────────────────────────────────────
+
+const RootLayout = () => {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
-        {session ? (
-          <>
+    <AuthProvider>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <AuthGuard>
+          <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(auth)" />
             <Stack.Screen name="project" />
             <Stack.Screen name="task" />
-          </>
-        ) : (
-          <Stack.Screen name="(auth)" />
-        )}
-      </Stack>
-    </SafeAreaProvider>
+          </Stack>
+        </AuthGuard>
+      </SafeAreaProvider>
+    </AuthProvider>
   );
-}
+};
+
+export default RootLayout;

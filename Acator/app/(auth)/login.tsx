@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,56 +16,64 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
+import { z } from "zod";
+import { theme } from "../../constants/theme";
+import { useAuth } from "../../context/AuthContext";
+
+// ── Validation schema ─────────────────────────────────────────────────────────
+
+const loginSchema = z.object({
+  email: z.string().trim().email("Please enter a valid email address."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { signIn } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Missing fields", "Please enter your email and password.");
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    setLoading(false);
-    if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        Alert.alert(
-          "Email not verified",
-          "Please check your inbox and confirm your email before logging in.",
-          [
-            {
-              text: "Resend email",
-              onPress: () =>
-                router.push({
-                  pathname: "/(auth)/verify-email",
-                  params: { email: email.trim() },
-                }),
-            },
-            { text: "OK", style: "cancel" },
-          ],
+  const {
+    control,
+    handleSubmit,
+    getValues,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+    mode: "onSubmit",
+  });
+
+  const onSubmit = async (data: LoginForm) => {
+    try {
+      setAuthError(null);
+      setIsSubmitting(true);
+      await signIn(data.email, data.password);
+      // No manual navigation needed — AuthGuard in _layout.tsx watches the
+      // session and redirects to /(tabs) once session becomes non-null.
+    } catch (e: any) {
+      const msg: string = e?.message ?? "";
+      if (msg.toLowerCase().includes("email not confirmed")) {
+        setAuthError(
+          "Email not verified. Check your inbox or resend the confirmation email.",
         );
       } else {
-        Alert.alert("Login failed", error.message);
+        setAuthError(
+          e instanceof Error ? e.message : "Sign in failed. Please try again.",
+        );
       }
-    } else {
-      router.replace("/(tabs)");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    Alert.alert(
-      "Google Sign-In",
-      "Configure OAuth in your Supabase dashboard to enable this.",
+  const handleGoogleLogin = () => {
+    setAuthError(
+      "Google Sign-In: configure OAuth in your Supabase dashboard to enable this.",
     );
   };
 
@@ -79,7 +89,7 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
+          {/* ── Logo ── */}
           <View style={styles.logoArea}>
             <View style={styles.logoMark}>
               <View style={styles.logoLeft} />
@@ -91,43 +101,99 @@ export default function LoginScreen() {
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>Sign in</Text>
 
-            <Text style={styles.fieldLabel}>Username or Email</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={styles.input}
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                returnKeyType="next"
-              />
-            </View>
-
-            <Text style={styles.fieldLabel}>Password</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                hitSlop={8}
-              >
+            {/* ── Auth error banner ── */}
+            {authError && (
+              <View style={styles.errorBanner}>
                 <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={18}
-                  color="rgba(255,255,255,0.6)"
+                  name="alert-circle-outline"
+                  size={16}
+                  color={theme.colors.error}
                 />
-              </TouchableOpacity>
-            </View>
+                <Text style={styles.errorBannerText}>{authError}</Text>
+                {authError.includes("not verified") && (
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(auth)/verify-email",
+                        params: { email: getValues("email").trim() },
+                      })
+                    }
+                  >
+                    <Text style={styles.errorBannerLink}>Resend</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
 
-            {/* Forgot password */}
+            {/* ── Email ── */}
+            <Text style={styles.fieldLabel}>Username or Email</Text>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value } }) => (
+                <View
+                  style={[
+                    styles.inputWrap,
+                    errors.email && styles.inputWrapError,
+                  ]}
+                >
+                  <TextInput
+                    style={styles.input}
+                    placeholderTextColor={theme.colors.placeholderOnTeal}
+                    value={value}
+                    onChangeText={onChange}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                    returnKeyType="next"
+                  />
+                </View>
+              )}
+            />
+            {errors.email && (
+              <Text style={styles.fieldError}>{errors.email.message}</Text>
+            )}
+
+            {/* ── Password ── */}
+            <Text style={styles.fieldLabel}>Password</Text>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, value } }) => (
+                <View
+                  style={[
+                    styles.inputWrap,
+                    errors.password && styles.inputWrapError,
+                  ]}
+                >
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholderTextColor={theme.colors.placeholderOnTeal}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    autoComplete="current-password"
+                    returnKeyType="done"
+                    onSubmitEditing={handleSubmit(onSubmit)}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      size={18}
+                      color={theme.colors.textOnTealMuted}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+            {errors.password && (
+              <Text style={styles.fieldError}>{errors.password.message}</Text>
+            )}
+
+            {/* ── Forgot password ── */}
             <TouchableOpacity
               style={styles.forgotBtn}
               onPress={() => router.push("/(auth)/forgot-password")}
@@ -135,14 +201,14 @@ export default function LoginScreen() {
               <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
 
-            {/* Divider */}
+            {/* ── Divider ── */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>or</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Create account */}
+            {/* ── Create account ── */}
             <TouchableOpacity
               onPress={() => router.push("/(auth)/signup")}
               style={styles.createAccountBtn}
@@ -150,7 +216,7 @@ export default function LoginScreen() {
               <Text style={styles.createAccountText}>Create an account</Text>
             </TouchableOpacity>
 
-            {/* Google */}
+            {/* ── Google ── */}
             <TouchableOpacity
               style={styles.googleBtn}
               onPress={handleGoogleLogin}
@@ -161,25 +227,25 @@ export default function LoginScreen() {
               <Text style={styles.googleText}>Sign in with Google</Text>
             </TouchableOpacity>
 
-            {/* Login */}
-            <TouchableOpacity
-              style={[styles.loginBtn, loading && { opacity: 0.7 }]}
-              onPress={handleLogin}
-              disabled={loading}
+            {/* ── Login button ── */}
+            <Pressable
+              style={[styles.loginBtn, isSubmitting && { opacity: 0.7 }]}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
             >
-              {loading ? (
-                <ActivityIndicator color={Colors.teal} />
+              {isSubmitting ? (
+                <ActivityIndicator color={theme.colors.primary} />
               ) : (
                 <>
                   <Text style={styles.loginBtnText}>Login</Text>
                   <Ionicons
                     name="chevron-forward"
                     size={18}
-                    color={Colors.teal}
+                    color={theme.colors.primary}
                   />
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -187,9 +253,19 @@ export default function LoginScreen() {
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.teal },
-  scroll: { flexGrow: 1, paddingBottom: 40 },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+
+  // ── Logo ──
   logoArea: {
     flexDirection: "row",
     alignItems: "center",
@@ -205,7 +281,7 @@ const styles = StyleSheet.create({
     left: 0,
     width: 5,
     height: 36,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     borderRadius: 3,
     transform: [{ rotate: "15deg" }],
   },
@@ -215,41 +291,98 @@ const styles = StyleSheet.create({
     left: 1,
     width: 22,
     height: 4,
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: theme.colors.textOnTealMuted,
     borderRadius: 2,
     transform: [{ rotate: "15deg" }],
   },
-  appName: { fontSize: 30, fontWeight: "600", color: "#fff", letterSpacing: 1 },
-  formCard: { paddingHorizontal: 28 },
+  appName: {
+    fontSize: 30,
+    fontWeight: "600",
+    color: theme.colors.textOnTeal,
+    letterSpacing: 1,
+  },
+
+  // ── Form ──
+  formCard: {
+    paddingHorizontal: theme.spacing.screen,
+  },
   formTitle: {
-    fontSize: 18,
+    ...theme.typography.subtitle,
     fontWeight: "500",
-    color: "#fff",
+    color: theme.colors.textOnTeal,
     textAlign: "center",
     marginBottom: 28,
   },
-  fieldLabel: {
+
+  // ── Error banner ──
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    borderRadius: theme.radius.input,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.error,
+  },
+  errorBannerLink: {
     fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
+    fontWeight: "700",
+    color: theme.colors.error,
+    textDecorationLine: "underline",
+  },
+
+  // ── Fields ──
+  fieldLabel: {
+    ...theme.typography.label,
+    color: theme.colors.textOnTealMuted,
     marginBottom: 8,
   },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 10,
+    backgroundColor: theme.colors.overlay,
+    borderRadius: theme.radius.input,
+    borderWidth: 1,
+    borderColor: "transparent",
     paddingHorizontal: 14,
-    marginBottom: 18,
-    height: 48,
+    marginBottom: theme.spacing.gap,
+    height: theme.spacing.inputH,
   },
-  input: { flex: 1, fontSize: 15, color: "#fff" },
-  forgotBtn: { alignSelf: "flex-end", marginTop: -10, marginBottom: 20 },
-  forgotText: {
+  inputWrapError: {
+    borderColor: theme.colors.error,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: theme.colors.textOnTeal,
+  },
+  fieldError: {
+    color: theme.colors.error,
     fontSize: 13,
-    color: "rgba(255,255,255,0.75)",
+    marginTop: -8,
+    marginBottom: theme.spacing.gap,
+  },
+
+  // ── Forgot ──
+  forgotBtn: {
+    alignSelf: "flex-end",
+    marginTop: -4,
+    marginBottom: 20,
+  },
+  forgotText: {
+    ...theme.typography.link,
+    color: theme.colors.textOnTealFaint,
     textDecorationLine: "underline",
   },
+
+  // ── Divider ──
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -261,45 +394,64 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: "rgba(255,255,255,0.3)",
   },
-  dividerText: { fontSize: 13, color: "rgba(255,255,255,0.6)" },
-  createAccountBtn: { alignItems: "center", marginVertical: 10 },
+  dividerText: {
+    fontSize: 13,
+    color: theme.colors.textOnTealFaint,
+  },
+
+  // ── Create account ──
+  createAccountBtn: {
+    alignItems: "center",
+    marginVertical: 10,
+  },
   createAccountText: {
-    fontSize: 14,
-    color: "#fff",
+    ...theme.typography.link,
+    color: theme.colors.textOnTeal,
     textDecorationLine: "underline",
     fontWeight: "500",
   },
+
+  // ── Google ──
   googleBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: Colors.teal,
+    backgroundColor: theme.colors.primary,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.3)",
-    borderRadius: 10,
+    borderRadius: theme.radius.input,
     paddingVertical: 13,
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: theme.spacing.gap,
   },
   googleIcon: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.card,
     alignItems: "center",
     justifyContent: "center",
   },
   googleG: { fontSize: 13, fontWeight: "700", color: "#4285F4" },
-  googleText: { fontSize: 14, fontWeight: "500", color: "#fff" },
+  googleText: {
+    ...theme.typography.link,
+    fontWeight: "500",
+    color: theme.colors.textOnTeal,
+  },
+
+  // ── Login button ──
   loginBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.input,
     paddingVertical: 14,
     marginTop: 4,
   },
-  loginBtnText: { fontSize: 15, fontWeight: "600", color: Colors.teal },
+  loginBtnText: {
+    ...theme.typography.button,
+    color: theme.colors.primary,
+  },
 });
