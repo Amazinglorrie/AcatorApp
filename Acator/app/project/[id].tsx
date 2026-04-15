@@ -212,9 +212,6 @@ export default function TaskDetailScreen() {
             </Text>
           </TouchableOpacity>
         ))}
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.tabText}>Chat</Text>
-        </TouchableOpacity>
       </View>
 
       {/* ── KANBAN TAB ── horizontally scrollable, full height */}
@@ -600,11 +597,16 @@ export default function TaskDetailScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.teal },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.teal,
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 16,
+  paddingVertical: 14,
+  backgroundColor: Colors.teal,
+  shadowColor: "#000",
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 6,
   },
   tabRow: {
     flexDirection: "row",
