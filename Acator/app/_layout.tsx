@@ -1,81 +1,49 @@
-import { Session } from "@supabase/supabase-js";
-import * as Notifications from "expo-notifications";
-import { Stack, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useRouter, useSegments } from "expo-router";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import {
-  registerForPushNotifications,
-  scheduleDueTaskNotifications,
-} from "../store/notifications";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
   const router = useRouter();
-  const notificationListener = useRef<any>();
-  const responseListener = useRef<any>();
+  const segments = useSegments();
+  const [session, setSession] = useState<any>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) setupNotifications();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setReady(true);
     });
 
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) setupNotifications();
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
 
-    // Handle notification taps — navigate to the right project
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        const data = response.notification.request.content.data;
-        if (data?.projectId) {
-          router.push(`/project/${data.projectId}`);
-        }
-      });
-
-    return () => {
-      subscription.unsubscribe();
-      if (notificationListener.current)
-        Notifications.removeNotificationSubscription(
-          notificationListener.current,
-        );
-      if (responseListener.current)
-        Notifications.removeNotificationSubscription(responseListener.current);
-    };
+    return () => listener.subscription.unsubscribe();
   }, []);
 
-  const setupNotifications = async () => {
-    const token = await registerForPushNotifications();
-    if (token) {
-      // Optionally save token to Supabase for server-side push
-      console.log("Push token:", token);
-    }
-    await scheduleDueTaskNotifications();
-  };
+  useEffect(() => {
+    if (!ready) return;
 
-  if (session === undefined) return null;
+    const inAuth = segments[0] === "(auth)";
+
+    if (!session && !inAuth) {
+      router.replace("/(auth)/login");
+    }
+
+    if (session && inAuth) {
+      router.replace("/(tabs)");
+    }
+  }, [session, ready, segments]);
 
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
-        {session ? (
-          <>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="project" />
-            <Stack.Screen name="task" />
-          </>
-        ) : (
-          <Stack.Screen name="(auth)" />
-        )}
-      </Stack>
+      <Stack screenOptions={{ headerShown: false }} />
     </SafeAreaProvider>
   );
-}
+};

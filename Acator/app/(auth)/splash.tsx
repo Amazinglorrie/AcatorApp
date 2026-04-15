@@ -40,8 +40,6 @@ export default function SplashScreen() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        router.replace("/(tabs)");
-      } else {
         router.replace("/(auth)/onboarding");
       }
     }, 2200);

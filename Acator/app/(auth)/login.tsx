@@ -55,9 +55,7 @@ export default function LoginScreen() {
       } else {
         Alert.alert("Login failed", error.message);
       }
-    } else {
-      router.replace("/(tabs)");
-    }
+    };
   };
 
   const handleGoogleLogin = async () => {

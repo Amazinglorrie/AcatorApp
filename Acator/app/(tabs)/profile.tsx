@@ -102,6 +102,13 @@ export default function ProfileScreen() {
     { icon: "person-outline", label: "Edit profile" },
     { icon: "notifications-outline", label: "Notification preferences" },
     { icon: "color-palette-outline", label: "Appearance" },
+    // ── NEW: QR code row ──────────────────────────────────────────────────────
+    {
+      icon: "qr-code-outline",
+      label: "My QR Code",
+      onPress: () => router.push("/(tabs)/qrcode"),
+    },
+    // ─────────────────────────────────────────────────────────────────────────
     { icon: "help-circle-outline", label: "Help & feedback" },
     {
       icon: "log-out-outline",

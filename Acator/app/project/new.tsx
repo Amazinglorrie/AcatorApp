@@ -2,21 +2,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DatePickerModal from "../../components/DatePickerModal";
 import {
-  Colors,
-  PROJECT_COLORS,
-  PROJECT_SUBJECTS,
-  colorBarFill,
+    Colors,
+    PROJECT_COLORS,
+    PROJECT_SUBJECTS,
+    colorBarFill,
 } from "../../constants/theme";
 import { Project, ProjectColor } from "../../constants/types";
 import { formatDueDate } from "../../constants/utils";
