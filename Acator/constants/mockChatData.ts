@@ -1,7 +1,13 @@
-// mockChats.ts
-// Drop this file anywhere convenient, e.g. constants/mockChats.ts
-// Replace with real Supabase queries when you're ready.
 
+
+export const mockFriends = [
+  { id: '1', name: "Alex",     initials: "AC", color: '#378ADD', online: true  },
+  { id: '2', name: "Jordan",    initials: "JL", color: '#7F77DD', online: false },
+  { id: '3', name: "Priya",  initials: "PS", color: '#1D9E75', online: true  },
+  { id: '4', name: "Marcus",   initials: "MW", color: '#BA7517', online: false },
+  { id: '5', name: "Sofia",  initials: "SN", color: '#E24B4A', online: true  },
+
+];
 export interface MockUser {
   id: string;
   name: string;

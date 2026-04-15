@@ -1,25 +1,10 @@
 // app/(tabs)/chat/index.tsx
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  SafeAreaView,
-  StatusBar,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, SafeAreaView, StatusBar,} from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  mockConversations,
-  MockConversation,
-  getLastMessage,
-  getUnreadCount,
-  formatTimestamp,
-  MOCK_ME_ID,
-} from '../../../constants/mockChatData';
+import {mockConversations,MockConversation,getLastMessage,getUnreadCount,formatTimestamp,MOCK_ME_ID,mockFriends } from '../../../constants/mockChatData';
 import { Colors } from '../../../constants/theme';
+
 
 export default function ChatListScreen() {
   const router = useRouter();
@@ -81,15 +66,18 @@ export default function ChatListScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Messages</Text>
-      </View>
 
+        <TouchableOpacity style={styles.headerAddBtn}>
+          <Text style={styles.headerAddText}>+</Text>
+        </TouchableOpacity>
+      </View>
+      <view style={styles.topSection}>
       {/* Search */}
       <View style={styles.searchWrapper}>
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search conversations..."
+            placeholder="Search..."
             placeholderTextColor={Colors.textTertiary}
             value={search}
             onChangeText={setSearch}
@@ -97,6 +85,34 @@ export default function ChatListScreen() {
           />
         </View>
       </View>
+
+    {/* Friends Row */}
+    <View style={styles.friendsContainer}>
+
+      <FlatList
+        data={mockFriends}
+        horizontal
+        nestedScrollEnabled
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.friendsList}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.friendItem}>
+            <View style={[styles.friendAvatar, { backgroundColor: item.color + "22" }]}>
+              <Text style={[styles.friendText, { color: item.color }]}>
+                {item.initials}
+              </Text>
+
+              {item.online && <View style={styles.friendOnlineDot} />}
+            </View>
+
+            <Text style={styles.friendName} numberOfLines={1}>
+              {item.name}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+    </view>
 
       {/* List */}
       <FlatList
@@ -124,6 +140,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  headerAddBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.separator,
+  },
+
+  headerAddText: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginTop: -2,
   },
   title: {
     fontSize: 28,
@@ -250,4 +287,74 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     fontSize: 15,
   },
+  friendsContainer: {
+  marginTop: 6,
+  marginBottom: 10,
+},
+
+friendsList: {
+  paddingHorizontal: 16,
+  gap: 14,
+  alignItems: "center",
+},
+
+addFriendBtn: {
+  width: 44,
+  height: 44,
+  borderRadius: 22,
+  backgroundColor: Colors.card,
+  borderWidth: 1,
+  borderColor: Colors.separator,
+  alignItems: "center",
+  justifyContent: "center",
+  marginLeft: 16,
+},
+
+addFriendText: {
+  fontSize: 24,
+  fontWeight: "600",
+  color: Colors.textPrimary,
+  marginTop: -2,
+},
+
+friendItem: {
+  alignItems: "center",
+  width: 60,
+},
+
+friendAvatar: {
+  width: 44,
+  height: 44,
+  borderRadius: 22,
+  alignItems: "center",
+  justifyContent: "center",
+  position: "relative",
+},
+
+friendText: {
+  fontSize: 14,
+  fontWeight: "700",
+},
+
+friendOnlineDot: {
+  position: "absolute",
+  bottom: 2,
+  right: 2,
+  width: 10,
+  height: 10,
+  borderRadius: 5,
+  backgroundColor: Colors.success,
+  borderWidth: 2,
+  borderColor: Colors.card,
+},
+
+friendName: {
+  fontSize: 11,
+  marginTop: 4,
+  color: Colors.textSecondary,
+  textAlign: "center",
+},
+topSection: {
+  marginBottom: 8,
+},
 });

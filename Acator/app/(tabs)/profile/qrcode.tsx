@@ -1,7 +1,6 @@
-// app/(tabs)/qrcode.tsx
+// app/(tabs)/profile/qrcode.tsx
 // Shows the user's personal QR code for friends to scan and add them.
 // Uses react-native-qrcode-svg — install with:
-//   npx expo install react-native-qrcode-svg react-native-svg
 
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -16,8 +15,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
-import { Colors } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
+import { Colors } from "../../../constants/theme";
+import { supabase } from "../../../lib/supabase";
 
 // ─── Mock ID generator (replace with real Supabase user.id later) ───────────
 function generateMockId(email: string): string {

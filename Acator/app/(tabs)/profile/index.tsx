@@ -1,19 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View, StyleSheet} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "../../constants/theme";
-import { getProgress } from "../../constants/utils";
-import { supabase } from "../../lib/supabase";
-import { getProjects, getTasks, seedDataIfEmpty } from "../../store/storage";
+import { Colors } from "../../../constants/theme";
+import { getProgress } from "../../../constants/utils";
+import { supabase } from "../../../lib/supabase";
+import { getProjects, getTasks, seedDataIfEmpty } from "../../../store/storage";
 
 type RowIconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -106,8 +99,7 @@ export default function ProfileScreen() {
     {
       icon: "qr-code-outline",
       label: "My QR Code",
-      onPress: () => router.push("/(tabs)/qrcode"),
-    },
+      onPress: () => router.push("/(tabs)/profile/qrcode"),    },
     // ─────────────────────────────────────────────────────────────────────────
     { icon: "help-circle-outline", label: "Help & feedback" },
     {

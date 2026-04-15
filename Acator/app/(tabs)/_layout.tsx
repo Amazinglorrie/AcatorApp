@@ -65,7 +65,7 @@ export default function TabsLayout() {
             <TabIcon
               name="chatbubble-outline"
               activeName="chatbubble"
-              label="Chat"
+              label="chat"
               focused={focused}
             />
           ),
@@ -97,6 +97,19 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+      name="tasks"
+      options={{
+        tabBarIcon: ({ focused }) => (
+          <TabIcon
+            name="checkbox-outline"
+            activeName="checkbox"
+            label="Tasks"
+            focused={focused}
+          />
+        ),
+      }}
+    />
     </Tabs>
   );
 }
