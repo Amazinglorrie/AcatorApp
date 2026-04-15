@@ -7,7 +7,7 @@ export default function RootLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.accent,
-        tabBarInactiveTintColonpmnpmr: Colors.textTertiary,
+        tabBarInactiveTintColor: Colors.textTertiary,
         tabBarStyle: {
           backgroundColor: Colors.card,
           borderTopColor: Colors.separator,
