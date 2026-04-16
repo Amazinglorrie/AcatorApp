@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View, StyleSheet} from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View, StyleSheet, Platform} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../../constants/theme";
 import { getProgress } from "../../../constants/utils";
@@ -75,17 +75,27 @@ export default function ProfileScreen() {
   );
 
   const handleSignOut = () => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign out",
-        style: "destructive",
-        onPress: async () => {
-          await supabase.auth.signOut();
-          router.replace("/(auth)/login");
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("Are you sure you want to sign out?");
+      if (confirmed) {
+        signOut();
+      }
+    } else {
+      Alert.alert("Sign out", "Are you sure you want to sign out?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign out",
+          style: "destructive",
+          onPress: signOut,
         },
-      },
-    ]);
+      ]);
+    }
+  };
+
+  const signOut = async () => {
+    console.log("Signing out...");
+    await supabase.auth.signOut();
+    router.replace("/(auth)/login");
   };
 
   const completion =
@@ -95,12 +105,10 @@ export default function ProfileScreen() {
     { icon: "person-outline", label: "Edit profile" },
     { icon: "notifications-outline", label: "Notification preferences" },
     { icon: "color-palette-outline", label: "Appearance" },
-    // ── NEW: QR code row ──────────────────────────────────────────────────────
     {
       icon: "qr-code-outline",
       label: "My QR Code",
       onPress: () => router.push("/(tabs)/profile/qrcode"),    },
-    // ─────────────────────────────────────────────────────────────────────────
     { icon: "help-circle-outline", label: "Help & feedback" },
     {
       icon: "log-out-outline",

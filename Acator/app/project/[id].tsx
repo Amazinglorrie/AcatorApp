@@ -484,7 +484,7 @@ export default function TaskDetailScreen() {
                 ]}
               />
             </View>
-            <View style={styles.taskList}>
+            <View style={{ marginTop: 12 }}>
               {tasks.map((t) => (
                 <TouchableOpacity
                   key={t.id}

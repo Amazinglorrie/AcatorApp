@@ -12,10 +12,13 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
       setSession(data.session);
       setReady(true);
-    });
+    };
+
+    init();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -29,16 +32,17 @@ export default function RootLayout() {
   useEffect(() => {
     if (!ready) return;
 
-    const inAuth = segments[0] === "(auth)";
+    const inAuthGroup = segments[0] === "(auth)";
 
-    if (!session && !inAuth) {
+    if (!session && !inAuthGroup) {
       router.replace("/(auth)/login");
-    }
-
-    if (session && inAuth) {
+    } else if (session && inAuthGroup) {
       router.replace("/(tabs)");
     }
   }, [session, ready, segments]);
+
+  // 🔑 THIS FIXES YOUR STARTUP ERROR
+  if (!ready) return null;
 
   return (
     <SafeAreaProvider>
@@ -46,4 +50,4 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }} />
     </SafeAreaProvider>
   );
-};
+}
