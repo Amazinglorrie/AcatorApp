@@ -41,7 +41,6 @@ export default function RootLayout() {
     }
   }, [session, ready, segments]);
 
-  // 🔑 THIS FIXES YOUR STARTUP ERROR
   if (!ready) return null;
 
   return (

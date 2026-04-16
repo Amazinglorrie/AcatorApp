@@ -2,20 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, AlertButton, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
+
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -24,45 +14,72 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Missing fields", "Please enter your email and password.");
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    setLoading(false);
-    if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        Alert.alert(
-          "Email not verified",
-          "Please check your inbox and confirm your email before logging in.",
-          [
-            {
-              text: "Resend email",
-              onPress: () =>
-                router.push({
-                  pathname: "/(auth)/verify-email",
-                  params: { email: email.trim() },
-                }),
-            },
-            { text: "OK", style: "cancel" },
-          ],
-        );
+  const showAlert = ( title: string, message: string, actions: AlertButton[] = []) => {
+    if (Platform.OS === "web") {
+      // Basic fallback for web
+      if (actions.length > 1) {
+        const confirmed = window.confirm(message);
+
+        if (confirmed) {
+          const primary = actions.find(a => a.style === "destructive") 
+            || actions.find(a => a.style !== "cancel");
+            primary?.onPress?.();
+        }
       } else {
-        Alert.alert("Login failed", error.message);
+        window.alert(message);
       }
-    };
+    } else {
+      Alert.alert(title, message, actions);
+    }
   };
 
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      showAlert("Missing fields", "Please enter your email and password.");
+      return;
+    }
+try {
+  setLoading(true);
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
+
+  if (error) {
+    if (error.message.toLowerCase().includes("email not confirmed")) {
+      showAlert(
+        "Email not verified",
+        "Please check your inbox and confirm your email before logging in.",
+        [
+          {
+            text: "Resend email",
+            onPress: () =>
+              router.push({
+                pathname: "/(auth)/verify-email",
+                params: { email: email.trim() },
+              }),
+          },
+          { text: "OK", style: "cancel" },
+        ]
+      );
+    } else {
+      showAlert("Login failed", error.message);
+    }
+  }
+
+} catch (e) {
+  console.log("Unexpected login error:", e);
+  showAlert("Error", "Something went wrong. Please try again.");
+} finally {
+  setLoading(false);
+}
+  };
   const handleGoogleLogin = async () => {
-    Alert.alert(
-      "Google Sign-In",
-      "Configure OAuth in your Supabase dashboard to enable this.",
-    );
+  showAlert(
+    "Google Sign-In",
+    "Configure OAuth in your Supabase dashboard to enable this."
+  );
   };
 
   return (
@@ -89,7 +106,7 @@ export default function LoginScreen() {
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>Sign in</Text>
 
-            <Text style={styles.fieldLabel}>Username or Email</Text>
+            <Text style={styles.fieldLabel}>Email</Text>
             <View style={styles.inputWrap}>
               <TextInput
                 style={styles.input}
